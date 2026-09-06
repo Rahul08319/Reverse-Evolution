@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reverse Evolution: Survival of the Weakest</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #2d1b4e, #1a1a2e);
+            color: #e0e0e0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+
+        .game-world {
+            flex: 1;
+            position: relative;
+            background: linear-gradient(to bottom, #4a4a6a, #2a2a3a);
+            overflow: hidden;
+        }
+
+        .creature {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+        }
+
+        .sidebar {
+            width: 320px;
+            background: rgba(20, 20, 30, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 2px solid #444;
+        }
+
+        .trait-panel {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, rgba(50, 50, 80, 0.8), rgba(30, 30, 50, 0.8));
+            border-radius: 10px;
+            border: 1px solid #555;
+        }
+
+        .trait {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            border-left: 3px solid #7c4dff;
+        }
+
+        .trait-bar {
+            width: 120px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .trait-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .devolve-btn {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .devolve-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
+        }
+
+        .devolve-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .challenge {
+            position: absolute;
+            padding: 15px;
+            background: rgba(255, 100, 100, 0.9);
+            border: 2px solid #ff4444;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+            max-width: 300px;
+            z-index: 100;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .status {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(70, 130, 180, 0.2);
+            border-radius: 8px;
+            border-left: 4px solid #4682b4;
+        }
+
+        .environment {
+            position: absolute;
+            font-size: 30px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .predator {
+            color: #ff4444;
+            filter: drop-shadow(0 0 15px rgba(255, 68, 68, 0.8));
+        }
+
+        .obstacle {
+            color: #8b4513;
+            filter: drop-shadow(0 0 10px rgba(139, 69, 19, 0.6));
+        }
+
+        .toxic-plant {
+            color: #9370db;
+            filter: drop-shadow(0 0 12px rgba(147, 112, 219, 0.7));
+        }
+
+        .victory-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .victory-content {
+            background: linear-gradient(135deg, #4a90e2, #7b68ee);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 0 50px rgba(123, 104, 238, 0.5);
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .level-indicator {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #7c4dff;
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(40, 167, 69, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-world" id="gameWorld">
+            <div class="creature" id="creature">🦎</div>
+            
+            <div class="controls">
+                <div><strong>Controls:</strong></div>
+                <div>Arrow Keys: Move creature</div>
+                <div>Devolve traits to survive challenges!</div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="level-indicator" id="levelIndicator">Level 1: The Hunting Grounds</div>
+            
+            <div class="status" id="gameStatus"></div>
+
+            <div class="trait-panel">
+                <h3>🧬 Evolution Traits</h3>
+                <div class="trait">
+                    <span>💪 Strength</span>
+                    <div class="trait-bar">
+                        <div class="trait-fill" id="strengthBar" style="width: 100%"></div>
+                    </div>
+                    <button class="devolve-btn" onclick="devolveTrait('strength')">Devolve</button>
+                </div>
+                <div class="trait">
+                    <span>🏃 Speed</span>
+                    <div class="trait-bar">
+                        <div class="trait-fill" id="speedBar" style="width: 100%"></div>
+                    </div>
+                    <button class="devolve-btn" onclick="devolveTrait('speed')">Devolve</button>
+                </div>
+                <div class="trait">
+                    <span>🧠 Intelligence</span>
+                    <div class="trait-bar">
+                        <div class="trait-fill" id="intelligenceBar" style="width: 100%"></div>
+                    </div>
+                    <button class="devolve-btn" onclick="devolveTrait('intelligence')">Devolve</button>
+                </div>
+                <div class="trait">
+                    <span>👁️ Vision</span>
+                    <div class="trait-bar">
+                        <div class="trait-fill" id="visionBar" style="width: 100%"></div>
+                    </div>
+                    <button class="devolve-btn" onclick="devolveTrait('vision')">Devolve</button>
+                </div>
+            </div>
+
+            <button class="restart-btn" onclick="restartGame()">🔄 Restart Game</button>
+        </div>
+    </div>
+
+    <div class="victory-screen" id="victoryScreen">
+        <div class="victory-content">
+            <h2>🎉 Survival Mastered!</h2>
+            <p id="victoryMessage"></p>
+            <button class="restart-btn" onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        class ReverseEvolutionGame {
+            constructor() {
+                this.creature = {
+                    x: 100,
+                    y: 100,
+                    traits: {
+                        strength: 100,
+                        speed: 100,
+                        intelligence: 100,
+                        vision: 100
+                    },
+                    form: '🦎'
+                };
+                
+                this.level = 1;
+                this.challenges = [];
+                this.environments = [];
+                this.gameRunning = true;
+                this.keys = {};
+                
+                this.levelData = {
+                    1: {
+                        name: "The Hunting Grounds",
+                        description: "Predators hunt the strong. Weakness is safety.",
+                        challenge: { type: 'predator', requirement: 'strength', threshold: 30 }
+                    },
+                    2: {
+                        name: "The Maze of Minds",
+                        description: "Smart creatures trigger ancient traps.",
+                        challenge: { type: 'trap', requirement: 'intelligence', threshold: 40 }
+                    },
+                    3: {
+                        name: "The Toxic Garden",
+                        description: "Large creatures absorb more poison.",
+                        challenge: { type: 'poison', requirement: 'strength', threshold: 20 }
+                    },
+                    4: {
+                        name: "The Blinding Storm",
+                        description: "Those who see too much are overwhelmed.",
+                        challenge: { type: 'storm', requirement: 'vision', threshold: 35 }
+                    },
+                    5: {
+                        name: "The Final Test",
+                        description: "True survival requires strategic re-evolution.",
+                        challenge: { type: 'final', requirement: 'all', threshold: 50 }
+                    }
+                };
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.generateLevel();
+                this.gameLoop();
+                this.updateStatus("Welcome to Reverse Evolution! Devolve to survive!");
+            }
+            
+            setupEventListeners() {
+                document.addEventListener('keydown', (e) => {
+                    this.keys[e.key] = true;
+                });
+                
+                document.addEventListener('keyup', (e) => {
+                    this.keys[e.key] = false;
+                });
+            }
+            
+            generateLevel() {
+                const gameWorld = document.getElementById('gameWorld');
+                const levelInfo = this.levelData[this.level];
+                
+                // Clear previous environments
+                document.querySelectorAll('.environment').forEach(el => el.remove());
+                document.querySelectorAll('.challenge').forEach(el => el.remove());
+                
+                // Update level indicator
+                document.getElementById('levelIndicator').textContent = 
+                    `Level ${this.level}: ${levelInfo.name}`;
+                
+                // Generate environment based on level
+                this.generateEnvironment(levelInfo);
+                
+                // Create challenge
+                this.createChallenge(levelInfo.challenge);
+                
+                this.updateCreatureAppearance();
+            }
+            
+            generateEnvironment(levelInfo) {
+                const gameWorld = document.getElementById('gameWorld');
+                const environments = [];
+                
+                switch(this.level) {
+                    case 1: // Hunting Grounds
+                        for(let i = 0; i < 3; i++) {
+                            const predator = document.createElement('div');
+                            predator.className = 'environment predator';
+                            predator.textContent = ['🦁', '🐺', '🦅'][i % 3];
+                            predator.style.left = Math.random() * (gameWorld.offsetWidth - 50) + 'px';
+                            predator.style.top = Math.random() * (gameWorld.offsetHeight - 50) + 'px';
+                            predator.style.animationDelay = i * 0.5 + 's';
+                            gameWorld.appendChild(predator);
+                        }
+                        break;
+                        
+                    case 2: // Maze of Minds
+                        for(let i = 0; i < 4; i++) {
+                            const trap = document.createElement('div');
+                            trap.className = 'environment obstacle';
+                            trap.textContent = ['⚡', '🔥', '⚙️', '🕳️'][i];
+                            trap.style.left = Math.random() * (gameWorld.offsetWidth - 50) + 'px';
+                            trap.style.top = Math.random() * (gameWorld.offsetHeight - 50) + 'px';
+                            gameWorld.appendChild(trap);
+                        }
+                        break;
+                        
+                    case 3: // Toxic Garden
+                        for(let i = 0; i < 5; i++) {
+                            const plant = document.createElement('div');
+                            plant.className = 'environment toxic-plant';
+                            plant.textContent = ['🍄', '🌺', '🌿', '🌹', '🌵'][i];
+                            plant.style.left = Math.random() * (gameWorld.offsetWidth - 50) + 'px';
+                            plant.style.top = Math.random() * (gameWorld.offsetHeight - 50) + 'px';
+                            gameWorld.appendChild(plant);
+                        }
+                        break;
+                        
+                    case 4: // Blinding Storm
+                        gameWorld.style.background = 'linear-gradient(45deg, #4169e1, #6495ed, #87ceeb)';
+                        for(let i = 0; i < 6; i++) {
+                            const storm = document.createElement('div');
+                            storm.className = 'environment';
+                            storm.textContent = ['⚡', '🌪️', '☁️'][i % 3];
+                            storm.style.left = Math.random() * (gameWorld.offsetWidth - 50) + 'px';
+                            storm.style.top = Math.random() * (gameWorld.offsetHeight - 50) + 'px';
+                            storm.style.color = '#ffffff';
+                            storm.style.filter = 'drop-shadow(0 0 20px rgba(255, 255, 255, 0.8))';
+                            gameWorld.appendChild(storm);
+                        }
+                        break;
+                        
+                    case 5: // Final Test
+                        gameWorld.style.background = 'linear-gradient(to bottom, #1a1a2e, #16213e, #0f3460)';
+                        const altar = document.createElement('div');
+                        altar.className = 'environment';
+                        altar.textContent = '🏛️';
+                        altar.style.left = '50%';
+                        altar.style.top = '30%';
+                        altar.style.transform = 'translate(-50%, -50%)';
+                        altar.style.fontSize = '60px';
+                        altar.style.color = '#ffd700';
+                        altar.style.filter = 'drop-shadow(0 0 30px rgba(255, 215, 0, 0.8))';
+                        gameWorld.appendChild(altar);
+                        break;
+                }
+            }
+            
+            createChallenge(challengeData) {
+                const gameWorld = document.getElementById('gameWorld');
+                const challenge = document.createElement('div');
+                challenge.className = 'challenge';
+                challenge.id = 'currentChallenge';
+                
+                let challengeText = this.getChallengeText(challengeData);
+                challenge.innerHTML = challengeText;
+                
+                challenge.style.left = '50%';
+                challenge.style.top = '10%';
+                challenge.style.transform = 'translateX(-50%)';
+                
+                gameWorld.appendChild(challenge);
+            }
+            
+            getChallengeText(challengeData) {
+                const traitValue = this.creature.traits[challengeData.requirement] || 100;
+                const survived = traitValue <= challengeData.threshold;
+                
+                switch(challengeData.type) {
+                    case 'predator':
+                        return survived ? 
+                            `✅ Predators ignore your weakness! (Strength: ${traitValue})` :
+                            `⚠️ You're too strong! Predators are hunting you!<br>Devolve Strength to ${challengeData.threshold} or below`;
+                            
+                    case 'trap':
+                        return survived ?
+                            `✅ You're too simple to trigger traps! (Intelligence: ${traitValue})` :
+                            `⚠️ Your intelligence triggers ancient mechanisms!<br>Devolve Intelligence to ${challengeData.threshold} or below`;
+                            
+                    case 'poison':
+                        return survived ?
+                            `✅ Your frail body absorbs less toxin! (Strength: ${traitValue})` :
+                            `⚠️ Your robust form absorbs deadly poison!<br>Devolve Strength to ${challengeData.threshold} or below`;
+                            
+                    case 'storm':
+                        return survived ?
+                            `✅ Your poor vision shields you from madness! (Vision: ${traitValue})` :
+                            `⚠️ You see too much of the cosmic horror!<br>Devolve Vision to ${challengeData.threshold} or below`;
+                            
+                    case 'final':
+                        const totalTraits = Object.values(this.creature.traits).reduce((a, b) => a + b, 0);
+                        if (totalTraits <= 100) {
+                            return `⚠️ You've become too weak to face the final trial!<br>You need to re-evolve ONE trait above 50 to prove adaptability!`;
+                        } else {
+                            const highTraits = Object.entries(this.creature.traits).filter(([key, value]) => value > 50);
+                            if (highTraits.length === 1) {
+                                return `✅ Perfect balance achieved! You've mastered strategic weakness!`;
+                            } else {
+                                return `⚠️ You must have exactly ONE trait above 50 for the final test!`;
+                            }
+                        }
+                }
+            }
+            
+            updateCreatureAppearance() {
+                const creature = document.getElementById('creature');
+                const traits = this.creature.traits;
+                
+                // Change creature form based on devolution
+                let form = '🦎'; // Default
+                
+                if (traits.strength < 30 && traits.speed < 30) form = '🐛'; // Very weak
+                else if (traits.intelligence < 30) form = '🐌'; // Dumb
+                else if (traits.vision < 30) form = '🦔'; // Blind
+                else if (traits.strength < 60) form = '🐁'; // Weak
+                else if (traits.speed < 60) form = '🐢'; // Slow
+                
+                creature.textContent = form;
+                this.creature.form = form;
+                
+                // Adjust size based on strength
+                const size = Math.max(30, 30 + (traits.strength / 100) * 30);
+                creature.style.width = size + 'px';
+                creature.style.height = size + 'px';
+                
+                // Adjust opacity based on overall weakness
+                const totalTraits = Object.values(traits).reduce((a, b) => a + b, 0);
+                const opacity = Math.max(0.3, totalTraits / 400);
+                creature.style.opacity = opacity;
+            }
+            
+            devolveTrait(traitName) {
+                if (this.creature.traits[traitName] > 0) {
+                    this.creature.traits[traitName] = Math.max(0, this.creature.traits[traitName] - 25);
+                    this.updateTraitBars();
+                    this.updateCreatureAppearance();
+                    this.checkChallenge();
+                    
+                    // Update status with trait loss
+                    const messages = {
+                        strength: "You feel your muscles atrophy... weakness grows!",
+                        speed: "Your limbs become sluggish... slowness embraces you!",
+                        intelligence: "Your mind simplifies... ignorance is bliss!",
+                        vision: "Your sight dims... blindness protects you!"
+                    };
+                    this.updateStatus(messages[traitName]);
+                }
+            }
+            
+            updateTraitBars() {
+                Object.keys(this.creature.traits).forEach(trait => {
+                    const bar = document.getElementById(trait + 'Bar');
+                    const value = this.creature.traits[trait];
+                    bar.style.width = value + '%';
+                    
+                    // Change color based on value
+                    if (value < 25) bar.style.background = '#27ae60'; // Green for very low
+                    else if (value < 50) bar.style.background = '#f39c12'; // Orange for low
+                    else bar.style.background = 'linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1)'; // Default
+                });
+            }
+            
+            checkChallenge() {
+                const levelInfo = this.levelData[this.level];
+                const challengeData = levelInfo.challenge;
+                
+                let survived = false;
+                
+                if (challengeData.type === 'final') {
+                    const totalTraits = Object.values(this.creature.traits).reduce((a, b) => a + b, 0);
+                    const highTraits = Object.entries(this.creature.traits).filter(([key, value]) => value > 50);
+                    survived = totalTraits > 100 && highTraits.length === 1;
+                } else {
+                    const traitValue = this.creature.traits[challengeData.requirement];
+                    survived = traitValue <= challengeData.threshold;
+                }
+                
+                // Update challenge display
+                const challengeEl = document.getElementById('currentChallenge');
+                if (challengeEl) {
+                    challengeEl.innerHTML = this.getChallengeText(challengeData);
+                }
+                
+                if (survived) {
+                    setTimeout(() => {
+                        this.nextLevel();
+                    }, 2000);
+                }
+            }
+            
+            nextLevel() {
+                if (this.level >= 5) {
+                    this.victory();
+                    return;
+                }
+                
+                this.level++;
+                this.generateLevel();
+                this.updateStatus(`Level ${this.level} - ${this.levelData[this.level].description}`);
+            }
+            
+            victory() {
+                const victoryScreen = document.getElementById('victoryScreen');
+                const victoryMessage = document.getElementById('victoryMessage');
+                
+                const totalDevolution = 400 - Object.values(this.creature.traits).reduce((a, b) => a + b, 0);
+                
+                victoryMessage.innerHTML = `
+                    <p>You have mastered the art of strategic weakness!</p>
+                    <p>Form: ${this.creature.form}</p>
+                    <p>Total Devolution: ${totalDevolution}/400</p>
+                    <p><em>"In a world that worships strength, sometimes the greatest power lies in knowing when to be weak."</em></p>
+                `;
+                
+                victoryScreen.style.display = 'flex';
+                this.gameRunning = false;
+            }
+            
+            updateStatus(message) {
+                document.getElementById('gameStatus').textContent = message;
+            }
+            
+            gameLoop() {
+                if (!this.gameRunning) return;
+                
+                this.handleMovement();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+            
+            handleMovement() {
+                const creature = document.getElementById('creature');
+                const speed = Math.max(1, this.creature.traits.speed / 20); // Slower when devolved
+                
+                let moved = false;
+                
+                if (this.keys['ArrowLeft'] || this.keys['a']) {
+                    this.creature.x = Math.max(0, this.creature.x - speed);
+                    moved = true;
+                }
+                if (this.keys['ArrowRight'] || this.keys['d']) {
+                    this.creature.x = Math.min(window.innerWidth - 100, this.creature.x + speed);
+                    moved = true;
+                }
+                if (this.keys['ArrowUp'] || this.keys['w']) {
+                    this.creature.y = Math.max(0, this.creature.y - speed);
+                    moved = true;
+                }
+                if (this.keys['ArrowDown'] || this.keys['s']) {
+                    this.creature.y = Math.min(window.innerHeight - 100, this.creature.y + speed);
+                    moved = true;
+                }
+                
+                if (moved) {
+                    creature.style.left = this.creature.x + 'px';
+                    creature.style.top = this.creature.y + 'px';
+                }
+            }
+        }
+        
+        // Global functions
+        function devolveTrait(traitName) {
+            if (window.game) {
+                window.game.devolveTrait(traitName);
+            }
+        }
+        
+        function restartGame() {
+            document.getElementById('victoryScreen').style.display = 'none';
+            document.getElementById('gameWorld').style.background = 'linear-gradient(to bottom, #4a4a6a, #2a2a3a)';
+            window.game = new ReverseEvolutionGame();
+        }
+        
+        // Initialize game
+        window.addEventListener('load', () => {
+            window.game = new ReverseEvolutionGame();
+        });
+    </script>
+</body>
+</html>
