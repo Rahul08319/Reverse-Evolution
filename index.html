@@ -606,6 +606,17 @@
          * ========================================================================
          * YouTube Playables SDK Integration Bridge
          * ========================================================================
+         * Encapsulates all required and recommended YouTube Playables SDK APIs:
+         * - ytgame.game.firstFrameReady()
+         * - ytgame.game.gameReady()
+         * - ytgame.game.saveData() / loadData()
+         * - ytgame.system.isAudioEnabled() / onAudioEnabledChange()
+         * - ytgame.system.onPause() / onResume()
+         * - ytgame.system.getLanguage()
+         * - ytgame.ads.requestInterstitialAd() / requestRewardedAd()
+         * - ytgame.engagement.sendScore()
+         * - ytgame.health.logError() / logWarning()
+         * Gracefully falls back to browser standard APIs when run locally.
          */
         class YouTubePlayablesBridge {
             constructor() {
@@ -652,6 +663,9 @@
                 }
             }
 
+            /**
+             * Call on first rendered animation frame.
+             */
             notifyFirstFrame() {
                 if (this.firstFrameReported) return;
                 this.firstFrameReported = true;
@@ -665,6 +679,9 @@
                 }
             }
 
+            /**
+             * Call once game is fully interactable and loading screen is gone.
+             */
             notifyGameReady() {
                 try {
                     if (typeof ytgame !== 'undefined' && ytgame.game && typeof ytgame.game.gameReady === 'function') {
@@ -676,6 +693,10 @@
                 }
             }
 
+            /**
+             * Cloud Save: Saves game data string to YouTube Cloud Storage.
+             * Max size: 3 MiB well-formed UTF-16 string.
+             */
             async saveData(dataObj) {
                 const jsonStr = JSON.stringify(dataObj);
                 try {
@@ -688,6 +709,7 @@
                     this.logError('Cloud save error: ' + err);
                 }
 
+                // Fallback to localStorage
                 try {
                     localStorage.setItem('REVERSE_EVOLUTION_SAVE', jsonStr);
                     console.log('[PlayablesBridge] LocalStorage save fallback succeeded.');
@@ -698,6 +720,9 @@
                 }
             }
 
+            /**
+             * Cloud Load: Loads game data string from YouTube Cloud Storage.
+             */
             async loadData() {
                 try {
                     if (this.isPlayables && typeof ytgame !== 'undefined' && ytgame.game?.loadData) {
@@ -711,6 +736,7 @@
                     this.logWarning('Cloud load error: ' + err);
                 }
 
+                // Fallback to localStorage
                 try {
                     const localRaw = localStorage.getItem('REVERSE_EVOLUTION_SAVE');
                     if (localRaw) {
@@ -722,6 +748,9 @@
                 return null;
             }
 
+            /**
+             * Send Score: Reports player's high score to YouTube leaderboard UI.
+             */
             async sendScore(scoreValue) {
                 const val = Math.floor(Math.max(0, scoreValue));
                 try {
@@ -734,6 +763,9 @@
                 }
             }
 
+            /**
+             * Interstitial Ad: Natural breakpoint ads (level change, game over, restart).
+             */
             async requestInterstitialAd() {
                 console.log('[PlayablesBridge] Requesting Interstitial Ad...');
                 try {
@@ -748,6 +780,10 @@
                 return false;
             }
 
+            /**
+             * Rewarded Ad: Opt-in ads providing game rewards.
+             * @param {string} rewardId Unique reward identifier.
+             */
             async requestRewardedAd(rewardId = 'adapt-clue-reward-01') {
                 console.log(`[PlayablesBridge] Requesting Rewarded Ad for ${rewardId}...`);
                 try {
@@ -759,6 +795,7 @@
                 } catch (err) {
                     this.logWarning('Rewarded ad failed: ' + err);
                 }
+                // In local dev fallback mode, simulate reward granted for testing
                 if (!this.isPlayables) {
                     console.log('[PlayablesBridge] Local fallback: Simulated rewarded ad granted.');
                     return true;
@@ -766,6 +803,9 @@
                 return false;
             }
 
+            /**
+             * Language Tag: Returns BCP-47 locale tag from YouTube.
+             */
             async getLanguage() {
                 try {
                     if (typeof ytgame !== 'undefined' && ytgame.system?.getLanguage) {
@@ -807,6 +847,7 @@
                 this.ctx = null;
                 this.enabled = true;
 
+                // Sync with bridge
                 this.bridge.onAudioChangeCallbacks.push((enabled) => {
                     this.enabled = enabled;
                     this.updateUI();
@@ -845,7 +886,9 @@
 
                     osc.start();
                     osc.stop(this.ctx.currentTime + duration);
-                } catch (e) {}
+                } catch (e) {
+                    // Audio autoplay or device policy
+                }
             }
 
             playMove() {
@@ -878,7 +921,7 @@
 
             playSuccess() {
                 if (!this.enabled || !this.bridge.audioEnabled) return;
-                const notes = [261.63, 329.63, 392.00, 523.25];
+                const notes = [261.63, 329.63, 392.00, 523.25]; // C chord arpeggio
                 notes.forEach((freq, idx) => {
                     setTimeout(() => this.playTone(freq, 'sine', 0.2, 0.1), idx * 70);
                 });
@@ -988,14 +1031,18 @@
                 this.setupEventListeners();
                 this.updateSDKStatusBadge();
 
+                // Load cloud/local save data
                 await this.loadSaveData();
 
+                // Generate level
                 this.generateLevel();
 
+                // Initial UI sync
                 this.updateTraitBars();
                 this.updateCreatureAppearance();
                 this.updateScoreUI();
 
+                // Start loop
                 requestAnimationFrame(() => {
                     this.bridge.notifyFirstFrame();
                     this.gameLoop();
@@ -1040,11 +1087,13 @@
             }
 
             setupDOM() {
+                // Register system pause/resume with bridge
                 this.bridge.onPauseCallbacks.push(() => this.pauseGame(true));
                 this.bridge.onResumeCallbacks.push(() => this.resumeGame());
             }
 
             setupEventListeners() {
+                // Keyboard
                 window.addEventListener('keydown', (e) => {
                     this.keys[e.key] = true;
                     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
@@ -1057,13 +1106,16 @@
                     this.keys[e.key] = false;
                 });
 
+                // Devolve buttons
                 document.getElementById('btnDevolveStrength').addEventListener('click', () => this.devolveTrait('strength'));
                 document.getElementById('btnDevolveSpeed').addEventListener('click', () => this.devolveTrait('speed'));
                 document.getElementById('btnDevolveIntelligence').addEventListener('click', () => this.devolveTrait('intelligence'));
                 document.getElementById('btnDevolveVision').addEventListener('click', () => this.devolveTrait('vision'));
 
+                // Rewarded Ad button
                 document.getElementById('btnRewardedAd').addEventListener('click', () => this.handleRewardedAd());
 
+                // Controls
                 document.getElementById('btnSoundToggle').addEventListener('click', () => {
                     this.sound.toggle();
                 });
@@ -1084,6 +1136,7 @@
                     this.handlePlayAgain();
                 });
 
+                // Mobile D-Pad touch controls
                 const dpadButtons = document.querySelectorAll('.dpad-btn');
                 dpadButtons.forEach(btn => {
                     const dir = btn.getAttribute('data-dir');
@@ -1106,6 +1159,7 @@
                     btn.addEventListener('mouseup', endMove);
                 });
 
+                // Tap-to-move in Game World
                 const gameWorld = document.getElementById('gameWorld');
                 gameWorld.addEventListener('pointerdown', (e) => {
                     if (e.target.closest('.mobile-dpad') || e.target.closest('.controls')) return;
@@ -1129,13 +1183,20 @@
                 const levelInfo = this.levelData[this.level];
                 this.survivedCurrent = false;
 
+                // Clear previous environmental entities & challenge
                 document.querySelectorAll('.environment').forEach(el => el.remove());
                 document.querySelectorAll('.challenge').forEach(el => el.remove());
 
+                // Update HUD indicator
                 document.getElementById('levelIndicator').textContent = `Level ${this.level}: ${levelInfo.name}`;
 
+                // Generate background & entities
                 this.generateEnvironment(levelInfo);
+
+                // Create Challenge Banner
                 this.createChallenge(levelInfo.challenge);
+
+                // Check condition immediately
                 this.checkChallenge(false);
             }
 
@@ -1261,15 +1322,16 @@
                 const traits = this.creature.traits;
 
                 let form = '🦎';
-                if (traits.strength < 30 && traits.speed < 30) form = '🐛';
-                else if (traits.intelligence < 30) form = '🐌';
-                else if (traits.vision < 30) form = '🦔';
-                else if (traits.strength < 60) form = '🐁';
-                else if (traits.speed < 60) form = '🐢';
+                if (traits.strength < 30 && traits.speed < 30) form = '🐛'; // Weak caterpillar
+                else if (traits.intelligence < 30) form = '🐌'; // Simple snail
+                else if (traits.vision < 30) form = '🦔'; // Blind hedgehog
+                else if (traits.strength < 60) form = '🐁'; // Timid mouse
+                else if (traits.speed < 60) form = '🐢'; // Slow turtle
 
                 creature.textContent = form;
                 this.creature.form = form;
 
+                // Adjust size & opacity based on traits
                 const size = Math.max(34, 30 + (traits.strength / 100) * 32);
                 creature.style.width = size + 'px';
                 creature.style.height = size + 'px';
@@ -1323,11 +1385,11 @@
                     if (bar) {
                         bar.style.width = val + '%';
                         if (val <= 30) {
-                            bar.style.background = '#2ecc71';
+                            bar.style.background = '#2ecc71'; // Green: safely devolved
                         } else if (val <= 60) {
-                            bar.style.background = '#f39c12';
+                            bar.style.background = '#f39c12'; // Orange: partial
                         } else {
-                            bar.style.background = '#e74c3c';
+                            bar.style.background = '#e74c3c'; // Red: dangerously strong
                         }
                     }
                 });
@@ -1373,6 +1435,7 @@
                     return;
                 }
 
+                // YouTube Interstitial Ad between levels
                 await this.bridge.requestInterstitialAd();
 
                 this.level++;
@@ -1393,6 +1456,7 @@
                     this.sound.playLevelUp();
                     const levelInfo = this.levelData[this.level];
 
+                    // Reward: Grant strategic adaptation hint + adapt relevant trait by 25
                     const req = levelInfo.challenge.requirement;
                     if (req && this.creature.traits[req] !== undefined && this.creature.traits[req] > levelInfo.challenge.threshold) {
                         this.creature.traits[req] = levelInfo.challenge.threshold;
@@ -1500,6 +1564,7 @@
                 const w = gameWorld.offsetWidth || 600;
                 const h = gameWorld.offsetHeight || 400;
 
+                // Speed calculation: slower as speed trait devolves
                 const baseSpeed = Math.max(1.5, (this.creature.traits.speed / 100) * 5.5);
 
                 let dx = 0;
@@ -1510,6 +1575,7 @@
                 if (this.keys['ArrowUp'] || this.keys['w'] || this.keys['W']) dy -= 1;
                 if (this.keys['ArrowDown'] || this.keys['s'] || this.keys['S']) dy += 1;
 
+                // Combine touch direction
                 dx += this.touchDirection.x;
                 dy += this.touchDirection.y;
 
@@ -1524,6 +1590,7 @@
             }
         }
 
+        // Initialize on DOM ready
         window.addEventListener('DOMContentLoaded', () => {
             window.gameInstance = new ReverseEvolutionGame();
         });
