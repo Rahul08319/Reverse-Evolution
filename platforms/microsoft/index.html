@@ -11,7 +11,7 @@
     -->
     <script>
         (function() {
-            const params = new URLSearchParams(window.location.search);
+            const params = new URLSearchParams("?platform=microsoft");
             const p = params.get('platform')?.toLowerCase();
 
             function loadScript(src) {

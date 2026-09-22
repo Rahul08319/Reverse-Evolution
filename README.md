@@ -4,25 +4,29 @@
 
 <br/>
 
-[![YouTube Playables SDK](https://img.shields.io/badge/YouTube_Playables-SDK_v1_Certified-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://developers.google.com/youtube/gaming/playables)
-[![Platform](https://img.shields.io/badge/Platform-Desktop_%7C_Mobile_%7C_YouTube-7C4DFF?style=for-the-badge&logo=googlechrome&logoColor=white)](https://developers.google.com/youtube/gaming/playables)
-[![Engine](https://img.shields.io/badge/Engine-Vanilla_HTML5_Canvas-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
-[![Audio](https://img.shields.io/badge/Audio-Synthesized_Web_Audio-2ECC71?style=for-the-badge&logo=soundcharts&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
-[![Vercel Deployment](https://img.shields.io/badge/Deploy-Vercel_Ready-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com)
-[![TypeScript Typings](https://img.shields.io/badge/Types-Official_ytgame_v1-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](types/youtube-playables.d.ts)
-[![License](https://img.shields.io/badge/License-MIT-3498DB?style=for-the-badge)](LICENSE)
+[![YouTube Playables](https://img.shields.io/badge/YouTube_Playables-SDK_v1-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://developers.google.com/youtube/gaming/playables)
+[![Facebook Instant Games](https://img.shields.io/badge/Facebook_Instant-SDK_v7.1-0866FF?style=for-the-badge&logo=facebook&logoColor=white)](https://developers.facebook.com/docs/games/instant-games)
+[![CrazyGames](https://img.shields.io/badge/CrazyGames-SDK_v3-7023B6?style=for-the-badge&logo=googleplay&logoColor=white)](https://docs.crazygames.com)
+[![Poki](https://img.shields.io/badge/Poki-SDK_v2-0080FF?style=for-the-badge)](https://developers.poki.com)
+[![Yandex Games](https://img.shields.io/badge/Yandex_Games-YaGames_v2-FC3F1D?style=for-the-badge&logo=yandex&logoColor=white)](https://yandex.com/dev/games/)
+[![Playhop](https://img.shields.io/badge/Playhop-SDK_Certified-2ECC71?style=for-the-badge)](https://playhop.com)
+[![GameDistribution](https://img.shields.io/badge/GameDistribution-HTML5_SDK-F39C12?style=for-the-badge)](https://gamedistribution.com)
+[![JioGames](https://img.shields.io/badge/JioGames-SDK_Ready-0A8754?style=for-the-badge)](https://jiogames.net)
+[![Discord Activities](https://img.shields.io/badge/Discord-Activities_SDK-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/developers/docs/activities/overview)
+[![Microsoft Store](https://img.shields.io/badge/Microsoft_Store-PWA_MSIX-0078D4?style=for-the-badge&logo=microsoft&logoColor=white)](https://partner.microsoft.com)
+[![Zero Middleware](https://img.shields.io/badge/Architecture-100%25_Native_SDKs_(No_Playgama)-10B981?style=for-the-badge)](src/platform-bridge.js)
 
 <br/>
 
 <p align="center">
   <strong>Darwinian Natural Selection, turned completely on its head.</strong><br>
-  <em>An inverted survival roguelite built exclusively for the <strong>YouTube Playables</strong> ecosystem.<br>
-  Apex predators hunt apex power. To survive, you must shed strength, dim intellect, and embrace glorious vulnerability.</em>
+  <em>An inverted survival roguelite built with a modular <strong>Universal Multi-Platform Engine</strong>.<br>
+  <strong>100% Native First-Party SDKs • Zero Playgama / Middleware Dependency • One Codebase for All Major Stores</strong></em>
 </p>
 
 <br/>
 
-[🕹️ Live Game](#-gameplay--interface-showcase) • [⚡ Playables SDK](#-youtube-playables-sdk-v1-architecture) • [🧬 Evolution Tree](#-metamorphic-morphologies) • [🗺️ The 5 Strata](#-the-five-cosmic-strata) • [🧪 Testing Guide](#-certification--test-suite)
+[🕹️ Play Game](#-gameplay--interface-showcase) • [🌐 Multi-Platform Matrix](#-universal-multi-platform-matrix) • [⚡ SDK Architecture](#-native-sdk-architecture-no-playgama) • [📦 Export & Packaging](#-one-click-multi-platform-packaging) • [🧪 Testing Guide](#-testing-any-platform-locally)
 
 ---
 
@@ -32,10 +36,10 @@
 
 | Feature | Specification |
 | :--- | :--- |
-| **SDK Standard** | Official **YouTube Playables SDK v1** (`https://www.youtube.com/game_api/v1`) |
-| **Security & CSP** | **100% Zero-External-Dependency**; Complies strictly with YouTube sandboxed CSP |
-| **Monetization** | Built-in **Interstitial Ads** (strata transitions) & **Rewarded Ads** (tactical adaptation) |
-| **Persistence** | **YouTube Cloud Save** (`ytgame.game.saveData` / `loadData`) with `localStorage` fallback |
+| **Cross-Platform Standard** | **12+ Native First-Party Platform Adapters** with zero revenue-share middleman |
+| **Security & CSP** | **100% Zero-External-Asset Dependency**; Strict Content Security Policy compliant |
+| **Monetization** | Native **Interstitial** & **Rewarded Ads** tailored for each portal's native ad network |
+| **Cloud Persistence** | Native cloud saves (YouTube Cloud, Facebook Player Data, Yandex Player Data, LocalStorage) |
 | **Audio Architecture** | Pure synthesized procedural soundwaves via **Web Audio API** (Oscillators) |
 | **Platform Controls** | Dual-mode: Desktop Keyboard (`WASD` / `Arrows`) + Mobile **Virtual D-Pad & Touch** |
 
@@ -49,52 +53,128 @@
 
 ---
 
-## 🌌 The Inverted Lore
+## 🌐 Universal Multi-Platform Matrix
 
-> *"In the cradle of the cosmos, the mighty are hunted first. The sharp-minded trigger ancient cognitive bombs. The keen-eyed go blind from celestial auroras. Only the frail, simple, and blind slip through the jaws of natural catastrophe."*
+Reverse Evolution integrates **directly and natively** with each platform's official SDK:
 
-In **Reverse Evolution**, **bigger is NOT better**. Each cosmic stratum is patrolled by hazards tuned to annihilate dominant biological traits:
-- **Apex Carnivores** hunger for muscular protein, ignoring puny organisms.
-- **Cognitive Runes** detonate only when high-IQ brainwaves scan them.
-- **Floral Neurotoxins** saturate large respiratory systems while microscopic bodies pass unharmed.
-- **Cosmic Auroras** drive any creature with sharp vision permanently mad.
+| Platform | Official Native SDK | Ads Support | Cloud Save | Leaderboards | Upload Format |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| 🔴 **YouTube Playables** | `ytgame` SDK v1 | Interstitial + Rewarded | `ytgame.game.saveData` | `ytgame.engagement` | `dist/youtube-bundle.zip` |
+| 🔵 **Facebook Instant** | `FBInstant` v7.1 | Interstitial + Rewarded | `FBInstant.player.setDataAsync` | `FBInstant.getLeaderboardAsync` | `dist/facebook-bundle.zip` (`fbapp-config.json`) |
+| 😈 **CrazyGames** | CrazyGames SDK v3 | Midgame + Rewarded | Cloud Account Sync | CrazyGames Leaderboards | `dist/crazygames-bundle.zip` |
+| 🔵 **Poki** | PokiSDK v2 | Commercial + Rewarded | LocalStorage / Cloud | Poki High Scores | `dist/poki-bundle.zip` |
+| 🎮 **Yandex Games** | YaGames SDK v2 | Fullscreen + Rewarded | `ysdk.getPlayer().setData()` | `ysdk.getLeaderboards()` | `dist/yandex-bundle.zip` |
+| 🟩 **Playhop** | Playhop / YaGames v2 | Fullscreen + Rewarded | Player Cloud Data | Global Leaderboards | `dist/playhop-bundle.zip` |
+| 🟣 **GameDistribution** | Azerion `gdsdk` | Interstitial + Rewarded | Local Storage Sync | GameDistribution API | `dist/gamedistribution-bundle.zip` |
+| 🟢 **JioGames** | JioGames HTML5 SDK | Interstitial + Rewarded | Jio User Profile Sync | JioGames Leaderboards | `dist/jiogames-bundle.zip` |
+| 🟣 **Discord Activities** | Embedded App SDK | Native Activity Overlay | Discord Cloud RPC | Guild High Scores | `dist/discord-bundle.zip` |
+| 🛍️ **Microsoft Store** | PWA / Windows MSIX | Windows Ad SDK / Store | Windows Roaming AppData | Xbox Live / Store API | `dist/microsoft-bundle.zip` (`manifest.json` + `sw.js`) |
+| 🦋 **MSN Games** | Microsoft Start Games | Preroll + Midgame | Microsoft Account Sync | MSN Leaderboards | `dist/microsoft-bundle.zip` |
+| 🚀 **Lagged** | Lagged.com API | Interstitial + Rewarded | LocalStorage Sync | `LaggedAPI.Scores.save` | `dist/lagged-bundle.zip` |
+| 🅈🄱 **Y8 Games** | Y8 ID & GameAPI | Preroll + Interstitial | Y8 Save API | `ID.GameAPI.CustomList` | `dist/y8-bundle.zip` |
 
 ---
 
-## 🎮 Key Gameplay Systems
+## ⚡ Native SDK Architecture (No Playgama)
 
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <h3>📉 Strategic Atrophy</h3>
-      <p>Strategically downgrade 4 core attributes: <strong>Strength</strong>, <strong>Speed</strong>, <strong>Intelligence</strong>, and <strong>Vision</strong> to slip beneath lethal hazard thresholds before the clock runs out.</p>
-    </td>
-    <td width="50%" valign="top">
-      <h3>🦎 Metamorphic Morphologies</h3>
-      <p>Real-time procedural shape-shifting. As your attributes decrease, your physical form mutates from an apex lizard into a timid mouse, blind hedgehog, or primordial grub.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <h3>🏆 The Adaptability Crucible</h3>
-      <p>Conquer the 5th stratum twist: true survival isn't just zeroing your stats, but calibrating your biology so exactly <strong>ONE</strong> trait dominates above 50.</p>
-    </td>
-    <td width="50%" valign="top">
-      <h3>🔊 Procedural 8-Bit Web Audio</h3>
-      <p>100% synthesized sound engine using the Web Audio API. Pure client-side waveforms with <strong>zero external asset requests</strong>, ensuring strict YouTube CSP compliance.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <h3>📱 Universal Touch & Virtual D-Pad</h3>
-      <p>Engineered for all YouTube Playables form factors: desktop keyboard (WASD / Arrows) and mobile touchscreens with responsive on-screen directional controls.</p>
-    </td>
-    <td width="50%" valign="top">
-      <h3>🎁 Built-in YouTube Monetization</h3>
-      <p>Seamlessly integrates YouTube Playables <strong>Interstitial Ads</strong> between strata transitions and <strong>Rewarded Ads</strong> offering tactical genetic hints.</p>
-    </td>
-  </tr>
-</table>
+Rather than adding heavy third-party aggregator SDKs that introduce fees, bloat, and tracking, Reverse Evolution utilizes an ultra-clean **Polymorphic Platform Adapter Pattern** in [`src/platform-bridge.js`](file:///c:/Users/Rahul%20Kumar/Downloads/Github/Reverse-Evolution/src/platform-bridge.js):
+
+```mermaid
+graph TD
+    Core["🎮 Reverse Evolution Game Engine<br/>(Loop, Trait Atrophy, Physics, Synthesized Audio)"]
+    Bridge["🔌 UniversalPlatformManager<br/>(src/platform-bridge.js)"]
+
+    Core --> Bridge
+
+    Bridge --> YTA["🔴 YouTube Playables<br/>(ytgame SDK v1)"]
+    Bridge --> FBA["🔵 Facebook Instant Games<br/>(FBInstant v7.1)"]
+    Bridge --> CGA["😈 CrazyGames<br/>(CrazyGames SDK v3)"]
+    Bridge --> PKA["🔵 Poki<br/>(PokiSDK v2)"]
+    Bridge --> YGA["🎮 Yandex Games / Playhop<br/>(YaGames v2)"]
+    Bridge --> GDA["🟣 GameDistribution<br/>(gdsdk HTML5)"]
+    Bridge --> JGA["🟢 JioGames<br/>(JioGames SDK)"]
+    Bridge --> DCA["🟣 Discord Activities<br/>(Embedded App SDK)"]
+    Bridge --> MSA["🛍️ Microsoft Store / MSN<br/>(PWA manifest & Service Worker)"]
+    Bridge --> STA["🌐 Standalone Web<br/>(Vercel, Itch.io, GitHub Pages)"]
+```
+
+### Unified Game API Calls
+
+Your game core code calls a single clean interface:
+
+```javascript
+// 1. Lifecycle & Flow
+platform.notifyFirstFrame();      // Dispatches ytgame.game.firstFrameReady or FBInstant setLoadingProgress
+platform.notifyGameReady();       // Signals game is interactive & loading screen is dismissed
+platform.gameplayStart();         // CrazyGames/Poki gameplay start signal
+platform.gameplayStop();          // CrazyGames/Poki gameplay pause signal
+
+// 2. Monetization (Native Ads)
+await platform.showInterstitialAd(); // Triggers native interstitial/commercial break
+const earned = await platform.showRewardedAd('reward-adapt-hint-101'); // Triggers native rewarded video
+
+// 3. Cloud Data Persistence
+await platform.saveData(state);   // Native cloud storage (YouTube, FBInstant player, Yandex player, LocalStorage)
+const saved = await platform.loadData();
+
+// 4. Social & Leaderboards
+await platform.submitScore(score);// Pushes to YouTube leaderboards, FBInstant leaderboards, Yandex leaderboards
+```
+
+---
+
+## 📦 One-Click Multi-Platform Packaging
+
+To generate all ready-to-upload platform bundles and `.zip` packages, simply run:
+
+```bash
+# Using npm
+npm run package
+
+# Or using Node directly
+node scripts/build-all-platforms.js
+```
+
+This compiles dedicated, pre-configured distribution packages in `dist/`:
+
+```
+dist/
+├── 🔴 youtube-bundle.zip          ➔ Upload to YouTube Playables Developer Portal
+├── 🔵 facebook-bundle.zip         ➔ Upload to Meta for Developers (Instant Games)
+├── 😈 crazygames-bundle.zip       ➔ Upload to CrazyGames Developer Portal
+├── 🔵 poki-bundle.zip             ➔ Upload to Poki for Developers
+├── 🎮 yandex-bundle.zip           ➔ Upload to Yandex Games Console
+├── 🟩 playhop-bundle.zip          ➔ Upload to Playhop Developer Dashboard
+├── 🟣 gamedistribution-bundle.zip ➔ Upload to GameDistribution Console
+├── 🟢 jiogames-bundle.zip         ➔ Upload to JioGames Developer Portal
+├── 🟣 discord-bundle.zip          ➔ Upload to Discord Developer Portal
+├── 🛍️ microsoft-bundle.zip        ➔ Package via PWABuilder for Microsoft Store
+├── 🚀 lagged-bundle.zip           ➔ Upload to Lagged Publishing
+└── 🅈🄱 y8-bundle.zip               ➔ Upload to Y8 Game Upload Portal
+```
+
+---
+
+## 🧪 Testing Any Platform Locally
+
+You can test any native platform adapter directly in your browser without leaving your desk!
+
+### Method 1: Use the In-Game Platform Switcher
+Click the **Platform Badge** in the top-right of the sidebar HUD to open the interactive Platform Switcher modal and test each platform's behavior.
+
+### Method 2: Query Parameter Overrides
+Append `?platform=<name>` to your URL:
+- `http://localhost:8080/?platform=youtube` (Tests YouTube Playables adapter)
+- `http://localhost:8080/?platform=facebook` (Tests Facebook Instant Games adapter)
+- `http://localhost:8080/?platform=crazygames` (Tests CrazyGames SDK v3 adapter)
+- `http://localhost:8080/?platform=poki` (Tests Poki SDK v2 adapter)
+- `http://localhost:8080/?platform=yandex` (Tests Yandex Games adapter)
+- `http://localhost:8080/?platform=playhop` (Tests Playhop adapter)
+- `http://localhost:8080/?platform=gamedistribution` (Tests GameDistribution adapter)
+- `http://localhost:8080/?platform=jiogames` (Tests JioGames adapter)
+- `http://localhost:8080/?platform=discord` (Tests Discord Activities adapter)
+- `http://localhost:8080/?platform=microsoft` (Tests Microsoft Store PWA adapter)
+- `http://localhost:8080/?platform=standalone` (Tests Standalone Web offline fallback)
 
 ---
 
@@ -137,77 +217,6 @@ graph TD
 
 ---
 
-## ⚡ YouTube Playables SDK v1 Architecture
-
-Reverse Evolution implements the complete official **YouTube Playables SDK** specification:
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant YT as YouTube Playables Host
-    participant Bridge as YouTubePlayablesBridge
-    participant Game as ReverseEvolutionGame
-
-    Note over YT,Game: 🚀 PHASE 1: Bootstrapping & Handshake
-    Game->>Bridge: Load <script src="https://www.youtube.com/game_api/v1"></script>
-    Game->>Bridge: notifyFirstFrame() on requestAnimationFrame
-    Bridge->>YT: ytgame.game.firstFrameReady()
-    Bridge->>YT: ytgame.game.loadData() (Cloud Save)
-    YT-->>Bridge: Serialized UTF-16 Save Payload
-    Bridge-->>Game: Restore Level, Traits & High Score
-    Game->>Bridge: notifyGameReady()
-    Bridge->>YT: ytgame.game.gameReady()
-
-    Note over YT,Game: 🔄 PHASE 2: Live Lifecycle & Audio Sync
-    YT->>Bridge: ytgame.system.onAudioEnabledChange(isAudioEnabled)
-    Bridge->>Game: SoundEngine.toggle() (Sync with host volume)
-    YT->>Bridge: ytgame.system.onPause()
-    Bridge->>YT: ytgame.game.saveData(JSON.stringify(state))
-    Bridge->>Game: Trigger In-Game Pause Modal & Freeze Loop
-    YT->>Bridge: ytgame.system.onResume()
-    Bridge->>Game: Dismiss Pause Modal & Resume Loop
-
-    Note over YT,Game: 💰 PHASE 3: Monetization & Social Engagement
-    Game->>Bridge: Next Level reached
-    Bridge->>YT: ytgame.ads.requestInterstitialAd()
-    Game->>Bridge: Player clicks "🎁 Rewarded Aid"
-    Bridge->>YT: ytgame.ads.requestRewardedAd('reward-adapt-hint-101')
-    YT-->>Bridge: true (Ad watched)
-    Bridge->>Game: Grant instant trait adjustment & clue
-    Game->>Bridge: calculateScore()
-    Bridge->>YT: ytgame.engagement.sendScore({ value: highScore })
-```
-
-### SDK Methods Implemented
-
-```javascript
-// 1. Initial Handshake & Lifecycle
-ytgame.game.firstFrameReady();         // Dispatched on first animation frame
-ytgame.game.gameReady();               // Dispatched when game is interactive
-
-// 2. Host System Events
-ytgame.system.isAudioEnabled();        // Initial audio status check
-ytgame.system.onAudioEnabledChange(fn);// Mute/unmute Web Audio oscillators
-ytgame.system.onPause(fn);             // Freeze gameplay & trigger instant cloud save
-ytgame.system.onResume(fn);            // Unpause simulation
-ytgame.system.getLanguage();           // BCP-47 locale tag (e.g., 'en-US')
-
-// 3. Cloud Persistence (UTF-16, <= 3 MiB)
-await ytgame.game.saveData(jsonStr);   // Cloud save
-const data = await ytgame.game.loadData();// Cloud load
-
-// 4. Ads Monetization
-await ytgame.ads.requestInterstitialAd();
-const earned = await ytgame.ads.requestRewardedAd('reward-adapt-hint-101');
-
-// 5. Engagement & Health Telemetry
-await ytgame.engagement.sendScore({ value: highScore });
-ytgame.health.logError();
-ytgame.health.logWarning();
-```
-
----
-
 ## 🕹️ Controls & Navigation
 
 <div align="center">
@@ -227,42 +236,28 @@ ytgame.health.logWarning();
 
 ---
 
-## 🧪 Certification & Test Suite
-
-### 1. Content Security Policy (CSP)
-When served on YouTube, all games run inside a restricted sandbox. Reverse Evolution uses **zero external CDNs, fonts, or assets**, complying 100% with:
-
-```http
-default-src 'none'; script-src 'report-sample' 'self' 'unsafe-eval' 'unsafe-inline' blob: https://www.youtube.com/game_api/v0 https://www.youtube.com/game_api/v0/ https://www.youtube.com/game_api/v1 https://www.youtube.com/game_api/v1/; object-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' blob: data:; media-src 'self' blob:; font-src 'self' data: https://fonts.googleapis.com https://fonts.gstatic.com; connect-src 'self' blob: data:; sandbox allow-pointer-lock allow-same-origin allow-scripts; base-uri 'self'; manifest-src 'self'; worker-src 'self' blob:
-```
-
-### 2. Local Testing with Chrome DevTools Overrides
-1. Open Google Chrome and navigate to your locally served game (`http://localhost:8080`).
-2. Press <kbd>F12</kbd> to open DevTools.
-3. Select **Sources** → **Overrides** → Click **Select folder for overrides**.
-4. In the **Network** tab, right-click `index.html` → **Response Headers** → **Add header**.
-5. Add `Content-Security-Policy` with the value above.
-6. Refresh the page to confirm that zero CSP violations occur in the Console.
-
-### 3. YouTube Playables Test Suite
-1. Access the official [YouTube Playables Test Suite](https://developers.google.com/youtube/gaming/playables/test_suite).
-2. Enter your deployment URL (e.g. your Vercel deployment link).
-3. Validate that all certification checkpoints pass:
-   - `First Frame Before Game Ready`: ✅ PASS
-   - `Audio Toggle Synchronization`: ✅ PASS
-   - `Cloud Save & Load Serialization`: ✅ PASS
-   - `Ad Request Handlers & Fallbacks`: ✅ PASS
-
----
-
 ## 📂 Repository File Structure
 
 ```
 Reverse-Evolution/
 │
-├── 🚀 index.html                  # Main production game entrypoint (Playables SDK v1)
+├── 🚀 index.html                  # Universal Adaptive Game Entrypoint (All Platforms)
 ├── 🔄 reverse-evolution-game.html # Synchronized legacy mirror
 ├── ⚙️ vercel.json                 # Vercel deployment routing & YouTube CSP headers
+├── 📦 package.json                # Project build scripts (npm run package)
+│
+├── 📁 src/
+│   └── platform-bridge.js         # Native Universal Platform Adapters (No Playgama)
+│
+├── 📁 platforms/                  # Standalone platform configurations
+│   ├── facebook/                  # Facebook Instant Games (fbapp-config.json)
+│   ├── microsoft-store/           # PWA manifest & Service Worker
+│   └── ...                        # CrazyGames, Poki, Yandex, etc.
+│
+├── 📁 scripts/
+│   └── build-all-platforms.js     # Multi-platform ZIP packaging tool
+│
+├── 📁 dist/                       # Ready-to-upload ZIP bundles for each portal
 │
 ├── 🖼️ assets/
 │   ├── banner.svg                 # Glowing neon hero banner
@@ -271,7 +266,7 @@ Reverse-Evolution/
 ├── 📘 types/
 │   └── youtube-playables.d.ts     # Official TypeScript typings for ytgame SDK
 │
-└── 📖 README.md                   # Visual showcase, lore & developer documentation
+└── 📖 README.md                   # Comprehensive Multi-Platform Showcase & Guide
 ```
 
 ---
@@ -285,23 +280,17 @@ Run the game locally using any static web server:
 git clone https://github.com/Rahul08319/Reverse-Evolution.git
 cd Reverse-Evolution
 
-# Option A: Node.js
-npx serve .
-
-# Option B: Python 3
-python -m http.server 8080
-
-# Option C: PHP
-php -S localhost:8080
+# Start local server
+npm start
+# or: npx serve .
+# or: python -m http.server 8080
 ```
-
-Open `http://localhost:8080` in your browser. The built-in `YouTubePlayablesBridge` will automatically detect the standalone environment and activate local browser fallbacks for cloud saving and ad rewards!
 
 ---
 
 <div align="center">
 
-Crafted with 💜 for the **YouTube Playables Ecosystem** • Created by [Rahul Kumar](https://github.com/Rahul08319)
+Crafted with 💜 for the **Global Web Gaming Ecosystem** • Created by [Rahul Kumar](https://github.com/Rahul08319)
 
 [![Follow on GitHub](https://img.shields.io/github/followers/Rahul08319?style=social)](https://github.com/Rahul08319)
 [![Star this repo](https://img.shields.io/github/stars/Rahul08319/Reverse-Evolution?style=social)](https://github.com/Rahul08319/Reverse-Evolution)

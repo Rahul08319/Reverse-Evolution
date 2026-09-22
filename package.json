@@ -1,0 +1,27 @@
+{
+  "name": "reverse-evolution",
+  "version": "1.0.0",
+  "description": "Reverse Evolution: Survival of the Weakest - Multi-Platform HTML5 Web Game",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "build": "node scripts/build-all-platforms.js",
+    "package": "node scripts/build-all-platforms.js"
+  },
+  "keywords": [
+    "html5-game",
+    "youtube-playables",
+    "facebook-instant-games",
+    "crazygames",
+    "poki",
+    "yandex-games",
+    "playhop",
+    "gamedistribution",
+    "jiogames",
+    "discord-activities",
+    "pwa",
+    "microsoft-store"
+  ],
+  "author": "Rahul Kumar",
+  "license": "MIT"
+}
