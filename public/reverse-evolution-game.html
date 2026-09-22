@@ -204,16 +204,6 @@
         .di-dot.danger { background: var(--system-red); box-shadow: 0 0 8px var(--system-red); }
         .di-dot.warn   { background: var(--system-orange); box-shadow: 0 0 8px var(--system-orange); }
 
-        .di-platform-badge {
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: var(--radius-full);
-            background: rgba(10, 132, 255, 0.25);
-            color: var(--system-teal);
-            border: 1px solid rgba(10, 132, 255, 0.3);
-            letter-spacing: 0.03em;
-        }
 
         .di-audio-btn {
             background: none;
@@ -908,7 +898,6 @@
             <div class="dynamic-island" id="dynamicIsland">
                 <span class="di-dot" id="diDot"></span>
                 <span class="di-level-name" id="diLevelName">The Hunting Grounds</span>
-                <span class="di-platform-badge" id="diPlatformBadge">YT</span>
                 <button class="di-audio-btn" id="diAudioBtn" title="Toggle audio">🔊</button>
             </div>
 
@@ -1380,19 +1369,6 @@
             updatePlatformUI() {
                 const label = document.getElementById('platformNameLabel');
                 if (label) label.textContent = this.platform.name;
-
-                // Short badge for Dynamic Island
-                const badgeEl = document.getElementById('diPlatformBadge');
-                if (badgeEl) {
-                    const shortNames = {
-                        'YouTube Playables': 'YT', 'Facebook Instant Games': 'FB',
-                        'CrazyGames': 'CG', 'Poki': 'POKI', 'Yandex Games': 'YA',
-                        'Playhop': 'HOP', 'GameDistribution': 'GD', 'JioGames': 'JIO',
-                        'Discord Activities': 'DC', 'Lagged': 'LGD', 'Y8 Games': 'Y8',
-                        'Microsoft Store': 'MS', 'Standalone Web': 'WEB'
-                    };
-                    badgeEl.textContent = shortNames[this.platform.name] || this.platform.name.substring(0, 3).toUpperCase();
-                }
 
                 const curPlat = UniversalPlatformManager.getPlatformFromUrl() || 'youtube';
                 document.querySelectorAll('.platform-choice-btn').forEach(btn => {
