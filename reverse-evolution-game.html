@@ -5,25 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Reverse Evolution: Survival of the Weakest</title>
 
-    <!-- 
-      YouTube Playables SDK v1:
-      MUST be loaded before any game code to establish the sandboxed environment.
+    <!--
+      Universal Native Platform SDK Loader (No Middleware)
+      Dynamically loads the first-party SDK based on environment or ?platform= parameter
     -->
-    <script src="https://www.youtube.com/game_api/v1"></script>
+    <script>
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+            const p = params.get('platform')?.toLowerCase();
+
+            function loadScript(src) {
+                document.write('<script src="' + src + '"><\/script>');
+            }
+
+            if (p === 'facebook' || p === 'fb') {
+                loadScript('https://connect.facebook.net/en_US/fbinstant.7.1.js');
+            } else if (p === 'crazygames' || p === 'cg') {
+                loadScript('https://sdk.crazygames.com/crazygames-sdk-v3.js');
+            } else if (p === 'poki') {
+                loadScript('https://game-cdn.poki.com/scripts/v2/poki-sdk.js');
+            } else if (p === 'yandex' || p === 'ya' || p === 'playhop') {
+                loadScript('https://yandex.ru/games/sdk/v2');
+            } else if (p === 'gamedistribution' || p === 'gd') {
+                window.GD_OPTIONS = { gameId: "reverse-evolution", onEvent: function() {} };
+                loadScript('https://html5.api.gamedistribution.com/main.min.js');
+            } else if (p === 'jiogames' || p === 'jio') {
+                loadScript('https://jiogames.net/sdk/v1/jiogames.js');
+            } else if (p === 'standalone' || p === 'web' || p === 'microsoft') {
+                // Standalone mode: no external SDK needed
+            } else {
+                // Default: YouTube Playables SDK v1 (MUST be first)
+                loadScript('https://www.youtube.com/game_api/v1');
+            }
+        })();
+    </script>
+
+    <!-- Native Universal Platform Bridge -->
+    <script src="src/platform-bridge.js"></script>
 
     <style>
+        /* ================================================================
+           APPLE SYSTEM DESIGN TOKENS
+           ================================================================ */
         :root {
-            --bg-primary: #12121f;
-            --bg-secondary: rgba(26, 26, 46, 0.95);
-            --accent-purple: #7c4dff;
-            --accent-green: #2ecc71;
-            --accent-red: #e74c3c;
-            --accent-gold: #f1c40f;
-            --text-main: #f0f0f5;
-            --text-muted: #9ba1b5;
+            /* Apple Semantic System Colors (Dark Mode) */
+            --system-blue:   #0A84FF;
+            --system-green:  #30D158;
+            --system-red:    #FF453A;
+            --system-orange: #FF9F0A;
+            --system-purple: #BF5AF2;
+            --system-yellow: #FFD60A;
+            --system-teal:   #64D2FF;
+            --system-indigo: #5E5CE6;
+
+            /* Canvas */
+            --bg-void:       #05050f;
+            --bg-deep:       #0a0a1a;
+            --bg-surface:    rgba(12, 12, 28, 0.72);
+
+            /* Labels */
+            --label-primary: rgba(255, 255, 255, 0.92);
+            --label-secondary: rgba(255, 255, 255, 0.60);
+            --label-tertiary: rgba(255, 255, 255, 0.36);
+
+            /* Glass recipe — never stack glass on glass */
+            --glass-fill:    rgba(20, 20, 44, 0.68);
+            --glass-blur:    blur(28px) saturate(190%);
+            --glass-border:  rgba(255, 255, 255, 0.10);
+            --glass-top:     rgba(255, 255, 255, 0.18);  /* specular highlight */
+
+            /* Spring timing functions (cubic-bezier approximations) */
+            --spring-default: cubic-bezier(0.32, 0.72, 0, 1);       /* critically damped */
+            --spring-bounce:  cubic-bezier(0.34, 1.56, 0.64, 1);    /* slight overshoot */
+            --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);
+
+            /* Radius */
+            --radius-xs:  6px;
+            --radius-sm:  10px;
+            --radius-md:  16px;
+            --radius-lg:  20px;
+            --radius-xl:  28px;
+            --radius-full: 999px;
         }
 
-        * {
+        /* ================================================================
+           RESET & BASE
+           ================================================================ */
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -31,15 +99,22 @@
             -webkit-user-select: none;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Courier New', monospace;
-            background-color: var(--bg-primary);
-            color: var(--text-main);
-            overflow: hidden;
-            height: 100vh;
+        html, body {
             width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--bg-void);
         }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+            color: var(--label-primary);
+            font-optical-sizing: auto;
+        }
+
+        /* ================================================================
+           LAYOUT
+           ================================================================ */
         .game-container {
             position: relative;
             width: 100vw;
@@ -48,14 +123,113 @@
             flex-direction: row;
         }
 
+        /* ================================================================
+           GAME WORLD
+           ================================================================ */
         .game-world {
             flex: 1;
             position: relative;
-            background: linear-gradient(180deg, #303050 0%, #1a1a2e 100%);
+            background: linear-gradient(165deg, #1a1040 0%, #0b0622 40%, #050918 100%);
             overflow: hidden;
             touch-action: none;
         }
 
+        /* Ambient nebula orbs in background */
+        .game-world::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 40% at 20% 30%, rgba(124, 77, 255, 0.12) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 30% at 80% 70%, rgba(10, 132, 255, 0.10) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 50% at 60% 20%, rgba(48, 209, 88, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Particle canvas overlay */
+        #particleCanvas {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 5;
+            will-change: transform;
+        }
+
+        /* ================================================================
+           DYNAMIC ISLAND — floating glass pill at top center
+           ================================================================ */
+        .dynamic-island {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 18px;
+            border-radius: var(--radius-full);
+            background: rgba(8, 8, 20, 0.82);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-top-color: var(--glass-top);
+            box-shadow:
+                0 0 0 1px rgba(0,0,0,0.4),
+                0 8px 32px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            transition: all 0.4s var(--spring-default);
+            will-change: transform;
+            cursor: default;
+            white-space: nowrap;
+        }
+
+        .di-level-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--label-primary);
+            letter-spacing: -0.01em;
+        }
+
+        .di-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--system-green);
+            box-shadow: 0 0 8px var(--system-green);
+            flex-shrink: 0;
+        }
+
+        .di-dot.danger { background: var(--system-red); box-shadow: 0 0 8px var(--system-red); }
+        .di-dot.warn   { background: var(--system-orange); box-shadow: 0 0 8px var(--system-orange); }
+
+        .di-platform-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            background: rgba(10, 132, 255, 0.25);
+            color: var(--system-teal);
+            border: 1px solid rgba(10, 132, 255, 0.3);
+            letter-spacing: 0.03em;
+        }
+
+        .di-audio-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0;
+            opacity: 0.7;
+            transition: opacity 120ms ease, transform 120ms var(--spring-default);
+        }
+        .di-audio-btn:hover { opacity: 1; }
+        .di-audio-btn:active { transform: scale(0.88); }
+
+        /* ================================================================
+           CREATURE
+           ================================================================ */
         .creature {
             position: absolute;
             width: 60px;
@@ -64,187 +238,451 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: transform 0.1s linear, width 0.3s ease, height 0.3s ease, opacity 0.3s ease;
-            filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
             z-index: 10;
+            filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.5));
+            transition: opacity 0.4s ease;
+            will-change: transform;
         }
 
+        /* Creature morph burst keyframe */
+        @keyframes morphBurst {
+            0%   { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 14px rgba(255,255,255,0.5)); }
+            25%  { transform: scale(1.40) rotate(-8deg); filter: drop-shadow(0 0 32px rgba(191,90,242,0.9)); }
+            55%  { transform: scale(0.88) rotate(4deg); }
+            80%  { transform: scale(1.08) rotate(-2deg); }
+            100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 14px rgba(255,255,255,0.5)); }
+        }
+
+        .creature--morph {
+            animation: morphBurst 0.55s var(--spring-bounce) forwards;
+        }
+
+        /* Idle breathing */
+        @keyframes creatureBreathe {
+            0%, 100% { transform: scale(1.0); }
+            50% { transform: scale(1.04); }
+        }
+        .creature--idle {
+            animation: creatureBreathe 3s ease-in-out infinite;
+        }
+
+        /* ================================================================
+           ENVIRONMENT ENTITIES
+           ================================================================ */
+        .environment {
+            position: absolute;
+            font-size: 32px;
+            pointer-events: none;
+            will-change: transform;
+        }
+
+        @keyframes floatEntity {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33%  { transform: translateY(-8px) rotate(1.5deg); }
+            66%  { transform: translateY(-4px) rotate(-1deg); }
+        }
+
+        @keyframes floatEntityB {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            40%  { transform: translateY(-12px) rotate(-2deg); }
+            70%  { transform: translateY(-6px) rotate(1.5deg); }
+        }
+
+        .environment { animation: floatEntity 3.6s ease-in-out infinite; }
+        .environment:nth-child(even) { animation-name: floatEntityB; animation-duration: 4.1s; }
+        .environment:nth-child(3n)   { animation-duration: 5.2s; animation-delay: -1.3s; }
+
+        /* Dual-layer glow for hazards */
+        .predator {
+            filter:
+                drop-shadow(0 0 10px rgba(255, 69, 58, 0.95))
+                drop-shadow(0 0 28px rgba(255, 69, 58, 0.5));
+        }
+        .obstacle {
+            filter:
+                drop-shadow(0 0 10px rgba(255, 159, 10, 0.9))
+                drop-shadow(0 0 24px rgba(255, 159, 10, 0.45));
+        }
+        .toxic-plant {
+            filter:
+                drop-shadow(0 0 10px rgba(191, 90, 242, 0.9))
+                drop-shadow(0 0 24px rgba(191, 90, 242, 0.45));
+        }
+
+        /* ================================================================
+           CHALLENGE BANNER — glass pill
+           ================================================================ */
+        .challenge {
+            position: absolute;
+            left: 50%;
+            padding: 12px 22px;
+            background: rgba(255, 69, 58, 0.18);
+            backdrop-filter: blur(16px) saturate(160%);
+            -webkit-backdrop-filter: blur(16px) saturate(160%);
+            border: 1px solid rgba(255, 69, 58, 0.4);
+            border-top-color: rgba(255, 120, 110, 0.5);
+            border-radius: var(--radius-md);
+            color: var(--label-primary);
+            font-weight: 600;
+            font-size: 13px;
+            text-align: center;
+            max-width: 360px;
+            z-index: 20;
+            pointer-events: none;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+            animation: challengeSlideIn 0.45s var(--spring-default) both, challengePulse 2.4s 0.5s ease-in-out infinite;
+        }
+
+        @keyframes challengeSlideIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        @keyframes challengePulse {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50%       { transform: translateX(-50%) scale(1.025); }
+        }
+
+        .challenge.survived {
+            background: rgba(48, 209, 88, 0.18);
+            border-color: rgba(48, 209, 88, 0.5);
+            border-top-color: rgba(100, 230, 140, 0.6);
+            animation: challengeSlideIn 0.4s var(--spring-default) both;
+        }
+
+        /* ================================================================
+           MOBILE D-PAD — Apple glass style
+           ================================================================ */
+        .mobile-dpad {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            width: 144px;
+            height: 144px;
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 5px;
+            z-index: 50;
+            opacity: 0.82;
+        }
+
+        .dpad-btn {
+            background: var(--glass-fill);
+            backdrop-filter: blur(16px) saturate(160%);
+            -webkit-backdrop-filter: blur(16px) saturate(160%);
+            border: 1px solid var(--glass-border);
+            border-top-color: rgba(255,255,255,0.14);
+            border-radius: var(--radius-sm);
+            color: var(--label-primary);
+            font-size: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: transform 100ms var(--spring-default), background 100ms ease;
+        }
+
+        .dpad-btn:active {
+            transform: scale(0.91);
+            background: rgba(10, 132, 255, 0.35);
+        }
+
+        .dpad-up     { grid-column: 2; grid-row: 1; }
+        .dpad-left   { grid-column: 1; grid-row: 2; }
+        .dpad-center { grid-column: 2; grid-row: 2; opacity: 0.15; pointer-events: none; }
+        .dpad-right  { grid-column: 3; grid-row: 2; }
+        .dpad-down   { grid-column: 2; grid-row: 3; }
+
+        /* Desktop hint */
+        .desktop-hint {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 7px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            color: var(--label-secondary);
+            pointer-events: none;
+            border: 1px solid rgba(255,255,255,0.06);
+            letter-spacing: 0.01em;
+        }
+
+        /* ================================================================
+           SIDEBAR — Apple glass panel
+           ================================================================ */
         .sidebar {
-            width: 330px;
-            background: var(--bg-secondary);
-            backdrop-filter: blur(12px);
-            padding: 16px;
+            width: 320px;
+            background: var(--glass-fill);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            padding: 18px 14px 14px;
             overflow-y: auto;
-            border-left: 2px solid rgba(124, 77, 255, 0.3);
+            border-left: 1px solid var(--glass-border);
+            border-top-left-radius: 0;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             z-index: 20;
+            position: relative;
+            /* Specular top highlight at left edge */
+            box-shadow: inset 1px 0 0 rgba(255,255,255,0.05);
         }
 
+        /* Gradient fade at scroll bottom */
+        .sidebar::after {
+            content: '';
+            position: sticky;
+            bottom: 0;
+            display: block;
+            height: 24px;
+            background: linear-gradient(to top, rgba(12,12,28,0.8), transparent);
+            pointer-events: none;
+            flex-shrink: 0;
+        }
+
+        /* ================================================================
+           PANEL HEADER
+           ================================================================ */
         .panel-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 8px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
         }
 
         .game-title {
-            font-size: 15px;
-            font-weight: bold;
-            color: #fff;
-            letter-spacing: 0.5px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--label-primary);
+            letter-spacing: -0.01em;
         }
 
+        /* Platform pill */
         .sdk-status-pill {
             display: inline-flex;
             align-items: center;
             gap: 5px;
             font-size: 10px;
-            padding: 3px 8px;
-            border-radius: 12px;
-            background: rgba(124, 77, 255, 0.2);
-            color: #b388ff;
-            border: 1px solid rgba(124, 77, 255, 0.4);
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            background: rgba(191, 90, 242, 0.18);
+            color: var(--system-purple);
+            border: 1px solid rgba(191, 90, 242, 0.35);
+            cursor: pointer;
+            transition: transform 120ms var(--spring-default), background 150ms ease;
+            letter-spacing: 0.03em;
         }
+        .sdk-status-pill:hover     { background: rgba(191, 90, 242, 0.30); }
+        .sdk-status-pill:active    { transform: scale(0.94); }
 
         .sdk-status-dot {
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background-color: var(--accent-green);
-            box-shadow: 0 0 6px var(--accent-green);
+            background: var(--system-green);
+            box-shadow: 0 0 6px var(--system-green);
+            flex-shrink: 0;
         }
 
-        .level-indicator {
-            text-align: center;
-            font-size: 16px;
-            font-weight: 700;
-            padding: 8px;
-            background: rgba(124, 77, 255, 0.15);
-            border-radius: 8px;
-            border: 1px solid rgba(124, 77, 255, 0.3);
-            color: #d1c4e9;
-        }
-
+        /* ================================================================
+           SCORE BOX — bento card
+           ================================================================ */
         .score-box {
             display: flex;
             justify-content: space-between;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 13px;
-        }
-
-        .status {
-            padding: 10px;
-            background: rgba(70, 130, 180, 0.15);
-            border-radius: 8px;
-            border-left: 4px solid #4682b4;
-            font-size: 13px;
-            line-height: 1.4;
-            color: #c9d6df;
-            min-height: 48px;
-        }
-
-        .trait-panel {
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .trait-panel h3 {
-            font-size: 14px;
-            margin-bottom: 10px;
-            color: #bb86fc;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .trait {
-            display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin: 8px 0;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 6px;
-            border-left: 3px solid var(--accent-purple);
-            font-size: 13px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-top-color: rgba(255,255,255,0.10);
+            padding: 10px 14px;
+            border-radius: var(--radius-md);
+            font-size: 12px;
+            color: var(--label-secondary);
+        }
+        .score-box strong {
+            color: var(--label-primary);
+            font-size: 15px;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+        }
+
+        /* ================================================================
+           STATUS MESSAGE
+           ================================================================ */
+        .status {
+            padding: 10px 12px;
+            background: rgba(10, 132, 255, 0.10);
+            border: 1px solid rgba(10, 132, 255, 0.22);
+            border-top-color: rgba(100, 210, 255, 0.2);
+            border-radius: var(--radius-md);
+            font-size: 12px;
+            line-height: 1.5;
+            color: var(--label-secondary);
+            min-height: 46px;
+            letter-spacing: 0.005em;
+        }
+
+        /* ================================================================
+           TRAIT BENTO PANEL
+           ================================================================ */
+        .trait-panel-header {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--label-secondary);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            padding: 0 2px;
+        }
+
+        /* Individual trait bento card */
+        .trait-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-top-color: rgba(255,255,255,0.11);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: border-color 0.3s ease, background 0.3s ease;
+        }
+
+        .trait-card.safe {
+            border-color: rgba(48, 209, 88, 0.30);
+            background: rgba(48, 209, 88, 0.07);
+        }
+        .trait-card.warn {
+            border-color: rgba(255, 159, 10, 0.30);
+            background: rgba(255, 159, 10, 0.07);
+        }
+        .trait-card.danger {
+            border-color: rgba(255, 69, 58, 0.30);
+            background: rgba(255, 69, 58, 0.07);
+        }
+
+        .trait-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .trait-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .trait-name-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 5px;
+        }
+
+        .trait-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--label-primary);
+            letter-spacing: -0.005em;
+        }
+
+        .trait-value-badge {
+            font-size: 11px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: var(--label-secondary);
+            background: rgba(255,255,255,0.08);
+            padding: 1px 6px;
+            border-radius: var(--radius-full);
+            min-width: 28px;
+            text-align: center;
         }
 
         .trait-bar {
-            width: 90px;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
+            height: 6px;
+            background: rgba(255,255,255,0.08);
+            border-radius: var(--radius-full);
             overflow: hidden;
-            margin: 0 8px;
         }
 
         .trait-fill {
             height: 100%;
-            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
-            transition: width 0.3s ease, background 0.3s ease;
-            border-radius: 4px;
+            border-radius: var(--radius-full);
+            transition: width 0.4s var(--spring-default), background-color 0.4s ease;
+            background: var(--system-red);
         }
 
+        .trait-fill.safe   { background: var(--system-green); }
+        .trait-fill.warn   { background: var(--system-orange); }
+        .trait-fill.danger { background: var(--system-red); }
+
+        /* Devolve button — Apple tactile press */
         .devolve-btn {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            color: white;
-            border: none;
-            padding: 5px 9px;
-            border-radius: 5px;
+            background: rgba(255, 69, 58, 0.18);
+            color: var(--system-red);
+            border: 1px solid rgba(255, 69, 58, 0.35);
+            padding: 6px 11px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
             font-size: 11px;
-            font-weight: bold;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            font-weight: 700;
+            letter-spacing: -0.005em;
+            flex-shrink: 0;
+            transition: transform 120ms var(--spring-default), background 120ms ease, box-shadow 120ms ease;
+            will-change: transform;
         }
-
         .devolve-btn:hover:not(:disabled) {
-            transform: scale(1.05);
-            box-shadow: 0 0 10px rgba(231, 76, 60, 0.6);
+            background: rgba(255, 69, 58, 0.30);
+            box-shadow: 0 0 12px rgba(255, 69, 58, 0.4);
         }
-
+        .devolve-btn:active:not(:disabled) {
+            transform: scale(0.91);
+            transition-duration: 80ms;
+        }
         .devolve-btn:disabled {
-            background: #555;
+            background: rgba(255,255,255,0.05);
+            color: var(--label-tertiary);
+            border-color: rgba(255,255,255,0.08);
             cursor: not-allowed;
-            opacity: 0.6;
         }
 
+        /* ================================================================
+           ACTION BUTTONS
+           ================================================================ */
         .action-buttons {
             display: flex;
             flex-direction: column;
             gap: 8px;
             margin-top: auto;
+            padding-top: 6px;
         }
 
+        /* Rewarded ad button — orange gradient */
         .ad-btn {
-            background: linear-gradient(135deg, #f39c12, #d35400);
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(255,159,10,0.22), rgba(255,99,10,0.18));
+            color: var(--system-orange);
+            border: 1px solid rgba(255,159,10,0.35);
+            border-top-color: rgba(255,200,80,0.3);
+            padding: 11px 14px;
+            border-radius: var(--radius-md);
             cursor: pointer;
             font-size: 13px;
-            font-weight: bold;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: transform 150ms var(--spring-default), box-shadow 150ms ease;
+            will-change: transform;
         }
-
-        .ad-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4);
-        }
-
-        .ad-btn:active {
-            transform: translateY(0);
-        }
+        .ad-btn:hover  { box-shadow: 0 0 20px rgba(255,159,10,0.25); }
+        .ad-btn:active { transform: scale(0.96); }
 
         .control-row {
             display: grid;
@@ -252,135 +690,39 @@
             gap: 8px;
         }
 
+        /* Secondary button — glass */
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 8px;
-            border-radius: 6px;
+            background: rgba(255,255,255,0.07);
+            color: var(--label-primary);
+            border: 1px solid rgba(255,255,255,0.11);
+            border-top-color: rgba(255,255,255,0.17);
+            padding: 9px 8px;
+            border-radius: var(--radius-md);
             cursor: pointer;
             font-size: 12px;
-            transition: all 0.2s ease;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .challenge {
-            position: absolute;
-            padding: 14px 20px;
-            background: rgba(231, 76, 60, 0.92);
-            backdrop-filter: blur(8px);
-            border: 2px solid #ff7675;
-            border-radius: 12px;
-            color: white;
             font-weight: 600;
-            font-size: 14px;
-            text-align: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            max-width: 360px;
-            z-index: 100;
-            animation: pulse 2.2s infinite ease-in-out;
-            pointer-events: none;
+            transition: transform 120ms var(--spring-default), background 120ms ease;
+            will-change: transform;
         }
+        .btn-secondary:hover  { background: rgba(255,255,255,0.12); }
+        .btn-secondary:active { transform: scale(0.94); }
 
-        @keyframes pulse {
-            0%, 100% { transform: translateX(-50%) scale(1); }
-            50% { transform: translateX(-50%) scale(1.03); }
+        .btn-reset {
+            background: rgba(255, 69, 58, 0.10);
+            border-color: rgba(255, 69, 58, 0.22);
+            color: rgba(255, 120, 110, 0.9);
         }
+        .btn-reset:hover { background: rgba(255, 69, 58, 0.18); }
 
-        .challenge.survived {
-            background: rgba(46, 204, 113, 0.92);
-            border-color: #55efc4;
-            animation: none;
-        }
-
-        .environment {
-            position: absolute;
-            font-size: 32px;
-            pointer-events: none;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .predator {
-            filter: drop-shadow(0 0 16px rgba(255, 68, 68, 0.9));
-        }
-
-        .obstacle {
-            filter: drop-shadow(0 0 12px rgba(241, 196, 15, 0.7));
-        }
-
-        .toxic-plant {
-            filter: drop-shadow(0 0 14px rgba(155, 89, 182, 0.8));
-        }
-
-        /* Virtual D-pad for Touch / Mobile Playables */
-        .mobile-dpad {
-            position: absolute;
-            bottom: 24px;
-            left: 24px;
-            width: 140px;
-            height: 140px;
-            display: none;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 4px;
-            z-index: 50;
-            opacity: 0.75;
-        }
-
-        .dpad-btn {
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 18px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            touch-action: manipulation;
-        }
-
-        .dpad-btn:active {
-            background: rgba(124, 77, 255, 0.6);
-        }
-
-        .dpad-up { grid-column: 2; grid-row: 1; }
-        .dpad-left { grid-column: 1; grid-row: 2; }
-        .dpad-center { grid-column: 2; grid-row: 2; opacity: 0.2; pointer-events: none; }
-        .dpad-right { grid-column: 3; grid-row: 2; }
-        .dpad-down { grid-column: 2; grid-row: 3; }
-
-        .desktop-hint {
-            position: absolute;
-            bottom: 16px;
-            left: 16px;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            color: #aaa;
-            pointer-events: none;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        /* Overlay Modals: Victory & Pause */
+        /* ================================================================
+           MODAL SCREENS — deeper glass
+           ================================================================ */
         .modal-screen {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(10, 10, 20, 0.88);
-            backdrop-filter: blur(8px);
+            inset: 0;
+            background: rgba(5, 5, 15, 0.75);
+            backdrop-filter: blur(12px) saturate(160%);
+            -webkit-backdrop-filter: blur(12px) saturate(160%);
             display: none;
             justify-content: center;
             align-items: center;
@@ -388,114 +730,195 @@
         }
 
         .modal-content {
-            background: linear-gradient(145deg, #1e1e38, #2a2a52);
-            padding: 36px 40px;
-            border-radius: 20px;
+            background: rgba(14, 14, 32, 0.88);
+            backdrop-filter: blur(32px) saturate(200%);
+            -webkit-backdrop-filter: blur(32px) saturate(200%);
+            padding: 28px 32px 24px;
+            border-radius: var(--radius-xl);
             text-align: center;
-            color: white;
-            border: 1px solid rgba(124, 77, 255, 0.4);
-            box-shadow: 0 0 50px rgba(124, 77, 255, 0.35);
-            max-width: 480px;
+            color: var(--label-primary);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-top-color: rgba(255,255,255,0.22);
+            box-shadow:
+                0 0 0 1px rgba(0,0,0,0.5),
+                0 32px 80px rgba(0,0,0,0.7),
+                inset 0 1px 0 rgba(255,255,255,0.08);
+            max-width: 520px;
             width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: modalEnter 0.4s var(--spring-default) both;
+        }
+
+        @keyframes modalEnter {
+            from { opacity: 0; transform: scale(0.92) translateY(16px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
         }
 
         .modal-content h2 {
-            font-size: 28px;
-            margin-bottom: 16px;
-            color: #fff;
-        }
-
-        .modal-content p {
-            font-size: 14px;
-            color: #d1d5db;
-            margin: 10px 0;
-            line-height: 1.6;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            margin-bottom: 12px;
         }
 
         .modal-btn {
-            background: linear-gradient(135deg, #7c4dff, #651fff);
-            color: white;
-            border: none;
-            padding: 12px 28px;
-            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(191,90,242,0.35), rgba(94,92,230,0.35));
+            color: var(--label-primary);
+            border: 1px solid rgba(191,90,242,0.40);
+            border-top-color: rgba(220,150,255,0.3);
+            padding: 11px 24px;
+            border-radius: var(--radius-md);
             cursor: pointer;
-            font-size: 15px;
-            font-weight: bold;
-            margin-top: 18px;
-            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 700;
+            margin-top: 14px;
+            transition: transform 120ms var(--spring-default), box-shadow 150ms ease;
+            will-change: transform;
+        }
+        .modal-btn:hover  { box-shadow: 0 0 24px rgba(191,90,242,0.40); }
+        .modal-btn:active { transform: scale(0.95); }
+
+        /* Platform Switcher Grid */
+        .platform-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
+            gap: 8px;
+            margin: 16px 0;
         }
 
-        .modal-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(124, 77, 255, 0.6);
+        .platform-choice-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-top-color: rgba(255,255,255,0.15);
+            padding: 10px 8px;
+            border-radius: var(--radius-md);
+            color: var(--label-secondary);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s var(--spring-default);
+            text-align: center;
+            text-decoration: none;
+            display: block;
+        }
+        .platform-choice-btn:hover {
+            background: rgba(191,90,242,0.18);
+            border-color: rgba(191,90,242,0.40);
+            color: var(--label-primary);
+            transform: translateY(-2px);
+        }
+        .platform-choice-btn:active { transform: scale(0.95) translateY(0); }
+        .platform-choice-btn.active {
+            background: rgba(48,209,88,0.15);
+            border-color: rgba(48,209,88,0.45);
+            color: var(--system-green);
         }
 
-        /* Toast notification */
+        /* ================================================================
+           TOAST
+           ================================================================ */
         .toast {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: rgba(30, 30, 50, 0.95);
-            border: 1px solid var(--accent-purple);
-            color: #fff;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 13px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-            transform: translateY(-50px);
+            background: rgba(20, 20, 44, 0.92);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-top-color: rgba(255,255,255,0.20);
+            color: var(--label-primary);
+            padding: 10px 18px;
+            border-radius: var(--radius-md);
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            transform: translateY(-54px);
             opacity: 0;
-            transition: all 0.3s ease;
+            transition: transform 0.4s var(--spring-default), opacity 0.3s ease;
             z-index: 2000;
             pointer-events: none;
+            max-width: 280px;
         }
+        .toast.show { transform: translateY(0); opacity: 1; }
 
-        .toast.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        /* Responsive Layout for Mobile / Tablets */
+        /* ================================================================
+           RESPONSIVE — Mobile
+           ================================================================ */
         @media (max-width: 800px) {
-            .game-container {
-                flex-direction: column;
-            }
-
+            .game-container { flex-direction: column; }
             .sidebar {
                 width: 100vw;
-                height: 45vh;
+                height: 46vh;
                 border-left: none;
-                border-top: 2px solid rgba(124, 77, 255, 0.3);
-                padding: 12px;
-                gap: 8px;
+                border-top: 1px solid var(--glass-border);
+                padding: 10px 12px 8px;
+                gap: 7px;
+                flex-direction: row;
+                flex-wrap: wrap;
+                overflow-y: auto;
             }
+            .panel-header { width: 100%; flex-shrink: 0; }
+            .game-world { height: 54vh; }
+            .mobile-dpad { display: grid; }
+            .desktop-hint { display: none; }
+            .action-buttons { flex-direction: row; flex-wrap: wrap; width: 100%; margin-top: 0; }
+            .ad-btn, .control-row, .btn-reset { width: 100%; }
+        }
 
-            .game-world {
-                height: 55vh;
+        /* ================================================================
+           REDUCED MOTION — swap springs for cross-fades
+           ================================================================ */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 200ms !important;
+                transition-timing-function: ease !important;
             }
+            .creature--morph { animation: none !important; }
+            .creature--idle  { animation: none !important; }
+            .modal-content { animation: none; }
+        }
 
-            .mobile-dpad {
-                display: grid;
-            }
-
-            .desktop-hint {
-                display: none;
+        /* Reduce transparency fallback */
+        @media (prefers-reduced-transparency: reduce) {
+            .sidebar, .modal-content, .dynamic-island, .challenge {
+                background: rgba(10,10,24,0.97) !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
             }
         }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <!-- Game World Viewport -->
+        <!-- ============================================================
+             GAME WORLD VIEWPORT
+             ============================================================ -->
         <div class="game-world" id="gameWorld">
-            <div class="creature" id="creature">🦎</div>
+
+            <!-- Particle FX Canvas -->
+            <canvas id="particleCanvas"></canvas>
+
+            <!-- Creature -->
+            <div class="creature creature--idle" id="creature">🦎</div>
+
+            <!-- Dynamic Island — floating pill HUD at top center -->
+            <div class="dynamic-island" id="dynamicIsland">
+                <span class="di-dot" id="diDot"></span>
+                <span class="di-level-name" id="diLevelName">The Hunting Grounds</span>
+                <span class="di-platform-badge" id="diPlatformBadge">YT</span>
+                <button class="di-audio-btn" id="diAudioBtn" title="Toggle audio">🔊</button>
+            </div>
 
             <!-- Mobile Touch D-Pad -->
             <div class="mobile-dpad" id="mobileDpad">
-                <button class="dpad-btn dpad-up" data-dir="up">▲</button>
-                <button class="dpad-btn dpad-left" data-dir="left">◀</button>
+                <button class="dpad-btn dpad-up"    data-dir="up">▲</button>
+                <button class="dpad-btn dpad-left"  data-dir="left">◀</button>
                 <div class="dpad-center"></div>
                 <button class="dpad-btn dpad-right" data-dir="right">▶</button>
-                <button class="dpad-btn dpad-down" data-dir="down">▼</button>
+                <button class="dpad-btn dpad-down"  data-dir="down">▼</button>
             </div>
 
             <!-- Desktop Controls Hint -->
@@ -504,82 +927,101 @@
             </div>
         </div>
 
-        <!-- Game Sidebar & HUD -->
+        <!-- ============================================================
+             SIDEBAR HUD
+             ============================================================ -->
         <div class="sidebar">
             <div class="panel-header">
                 <span class="game-title">REVERSE EVOLUTION</span>
-                <div class="sdk-status-pill" id="sdkStatusPill">
-                    <span class="sdk-status-dot" id="sdkStatusDot"></span>
-                    <span id="sdkStatusText">Playables v1</span>
+                <div class="sdk-status-pill" id="btnOpenPlatformSwitcher" title="Switch platform / test SDKs">
+                    <span class="sdk-status-dot"></span>
+                    <span id="platformNameLabel">Native SDK</span>
                 </div>
             </div>
 
-            <div class="level-indicator" id="levelIndicator">Level 1: The Hunting Grounds</div>
-
+            <!-- Score bento card -->
             <div class="score-box">
-                <span>Devolution Score: <strong id="scoreVal">0</strong></span>
-                <span>Best: <strong id="highScoreVal">0</strong></span>
+                <div>
+                    <div style="font-size:10px;color:var(--label-tertiary);letter-spacing:0.05em;margin-bottom:2px;">SCORE</div>
+                    <strong id="scoreVal">0</strong>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:10px;color:var(--label-tertiary);letter-spacing:0.05em;margin-bottom:2px;">BEST</div>
+                    <strong id="highScoreVal">0</strong>
+                </div>
             </div>
 
+            <!-- Status message -->
             <div class="status" id="gameStatus">Welcome to Reverse Evolution! Invert your traits to survive.</div>
 
-            <!-- Trait Management HUD -->
-            <div class="trait-panel">
-                <h3>🧬 Genetic Weakness <span>Threshold</span></h3>
+            <!-- Trait bento cards -->
+            <div class="trait-panel-header">🧬 Genetic Weakness</div>
 
-                <div class="trait">
-                    <span>💪 Strength</span>
-                    <div class="trait-bar">
-                        <div class="trait-fill" id="strengthBar" style="width: 100%"></div>
+            <div class="trait-card danger" id="card-strength">
+                <span class="trait-icon">💪</span>
+                <div class="trait-info">
+                    <div class="trait-name-row">
+                        <span class="trait-name">Strength</span>
+                        <span class="trait-value-badge" id="valStrength">100</span>
                     </div>
-                    <button class="devolve-btn" id="btnDevolveStrength">Devolve</button>
+                    <div class="trait-bar"><div class="trait-fill danger" id="strengthBar" style="width:100%"></div></div>
                 </div>
-
-                <div class="trait">
-                    <span>🏃 Speed</span>
-                    <div class="trait-bar">
-                        <div class="trait-fill" id="speedBar" style="width: 100%"></div>
-                    </div>
-                    <button class="devolve-btn" id="btnDevolveSpeed">Devolve</button>
-                </div>
-
-                <div class="trait">
-                    <span>🧠 Intelligence</span>
-                    <div class="trait-bar">
-                        <div class="trait-fill" id="intelligenceBar" style="width: 100%"></div>
-                    </div>
-                    <button class="devolve-btn" id="btnDevolveIntelligence">Devolve</button>
-                </div>
-
-                <div class="trait">
-                    <span>👁️ Vision</span>
-                    <div class="trait-bar">
-                        <div class="trait-fill" id="visionBar" style="width: 100%"></div>
-                    </div>
-                    <button class="devolve-btn" id="btnDevolveVision">Devolve</button>
-                </div>
+                <button class="devolve-btn" id="btnDevolveStrength">Devolve</button>
             </div>
 
-            <!-- Monetization & Actions -->
+            <div class="trait-card danger" id="card-speed">
+                <span class="trait-icon">🏃</span>
+                <div class="trait-info">
+                    <div class="trait-name-row">
+                        <span class="trait-name">Speed</span>
+                        <span class="trait-value-badge" id="valSpeed">100</span>
+                    </div>
+                    <div class="trait-bar"><div class="trait-fill danger" id="speedBar" style="width:100%"></div></div>
+                </div>
+                <button class="devolve-btn" id="btnDevolveSpeed">Devolve</button>
+            </div>
+
+            <div class="trait-card danger" id="card-intelligence">
+                <span class="trait-icon">🧠</span>
+                <div class="trait-info">
+                    <div class="trait-name-row">
+                        <span class="trait-name">Intelligence</span>
+                        <span class="trait-value-badge" id="valIntelligence">100</span>
+                    </div>
+                    <div class="trait-bar"><div class="trait-fill danger" id="intelligenceBar" style="width:100%"></div></div>
+                </div>
+                <button class="devolve-btn" id="btnDevolveIntelligence">Devolve</button>
+            </div>
+
+            <div class="trait-card danger" id="card-vision">
+                <span class="trait-icon">👁️</span>
+                <div class="trait-info">
+                    <div class="trait-name-row">
+                        <span class="trait-name">Vision</span>
+                        <span class="trait-value-badge" id="valVision">100</span>
+                    </div>
+                    <div class="trait-bar"><div class="trait-fill danger" id="visionBar" style="width:100%"></div></div>
+                </div>
+                <button class="devolve-btn" id="btnDevolveVision">Devolve</button>
+            </div>
+
+            <!-- Monetization & Controls -->
             <div class="action-buttons">
-                <!-- YouTube Rewarded Ad Integration -->
-                <button class="ad-btn" id="btnRewardedAd" title="Watch a brief video to gain an adaptive survival hint or trait rewind">
-                    <span>🎁 Rewarded Aid: Adapt Clue</span>
+                <button class="ad-btn" id="btnRewardedAd">
+                    <span>🎁</span> <span>Rewarded Aid: Adapt Clue</span>
                 </button>
 
                 <div class="control-row">
-                    <button class="btn-secondary" id="btnSoundToggle">🔊 Audio: ON</button>
                     <button class="btn-secondary" id="btnPauseGame">⏸️ Pause</button>
+                    <button class="btn-secondary" id="btnRestartGame" style="background:rgba(255,69,58,0.10);border-color:rgba(255,69,58,0.22);color:rgba(255,120,110,0.9);">🔄 Reset</button>
                 </div>
-
-                <button class="btn-secondary" id="btnRestartGame" style="background: rgba(231, 76, 60, 0.2); border-color: rgba(231, 76, 60, 0.4);">
-                    🔄 Reset Level
-                </button>
             </div>
         </div>
-    </div>
+    </div><!-- /game-container -->
 
-    <!-- Victory Screen Modal -->
+    <!-- ================================================================
+         VICTORY MODAL
+         ================================================================ -->
     <div class="modal-screen" id="victoryScreen">
         <div class="modal-content">
             <h2>🏆 Natural Selection Inverted!</h2>
@@ -588,226 +1030,187 @@
         </div>
     </div>
 
-    <!-- Pause Screen Modal (Triggered by ytgame.system.onPause or Manual Pause) -->
+    <!-- ================================================================
+         PAUSE MODAL
+         ================================================================ -->
     <div class="modal-screen" id="pauseScreen">
         <div class="modal-content">
             <h2>⏸️ Game Paused</h2>
-            <p>Your game state has been automatically saved to YouTube Cloud Storage.</p>
-            <p style="color: var(--text-muted); font-size: 12px;">Take your time. The predators are frozen in time.</p>
+            <p style="color:var(--label-secondary);font-size:13px;line-height:1.6;">
+                Your game state has been saved to cloud persistence.<br>
+                <span style="color:var(--label-tertiary);font-size:12px;">The predators are frozen in time.</span>
+            </p>
             <button class="modal-btn" id="btnResumeGame">Resume Game</button>
         </div>
     </div>
 
-    <!-- Toast Notification -->
+    <!-- ================================================================
+         PLATFORM SWITCHER MODAL
+         ================================================================ -->
+    <div class="modal-screen" id="platformSwitcherModal">
+        <div class="modal-content">
+            <h2>🔌 Platform SDK Switcher</h2>
+            <p style="font-size:12px;color:var(--label-secondary);line-height:1.5;">
+                100% native first-party SDK adapters — no middleman. Select a platform to load its native SDK:
+            </p>
+            <div class="platform-grid">
+                <a href="?platform=youtube"          class="platform-choice-btn" data-plat="youtube">🔴 YouTube</a>
+                <a href="?platform=facebook"         class="platform-choice-btn" data-plat="facebook">🔵 Facebook</a>
+                <a href="?platform=crazygames"       class="platform-choice-btn" data-plat="crazygames">😈 CrazyGames</a>
+                <a href="?platform=poki"             class="platform-choice-btn" data-plat="poki">🔵 Poki</a>
+                <a href="?platform=yandex"           class="platform-choice-btn" data-plat="yandex">🎮 Yandex</a>
+                <a href="?platform=playhop"          class="platform-choice-btn" data-plat="playhop">🟩 Playhop</a>
+                <a href="?platform=gamedistribution" class="platform-choice-btn" data-plat="gamedistribution">🟣 GameDistrib.</a>
+                <a href="?platform=jiogames"         class="platform-choice-btn" data-plat="jiogames">🟢 JioGames</a>
+                <a href="?platform=discord"          class="platform-choice-btn" data-plat="discord">🟣 Discord</a>
+                <a href="?platform=lagged"           class="platform-choice-btn" data-plat="lagged">🚀 Lagged</a>
+                <a href="?platform=y8"               class="platform-choice-btn" data-plat="y8">🅈🄱 Y8</a>
+                <a href="?platform=microsoft"        class="platform-choice-btn" data-plat="microsoft">🛍️ Microsoft</a>
+                <a href="?platform=standalone"       class="platform-choice-btn" data-plat="standalone">🌐 Standalone</a>
+            </div>
+            <button class="btn-secondary" id="btnClosePlatformSwitcher" style="width:100%;">Close</button>
+        </div>
+    </div>
+
+    <!-- Toast -->
     <div class="toast" id="toast"></div>
 
     <script>
-        /**
-         * ========================================================================
-         * YouTube Playables SDK Integration Bridge
-         * ========================================================================
-         */
-        class YouTubePlayablesBridge {
-            constructor() {
-                this.isPlayables = (typeof ytgame !== 'undefined' && Boolean(ytgame.IN_PLAYABLES_ENV));
-                this.audioEnabled = true;
-                this.onPauseCallbacks = [];
-                this.onResumeCallbacks = [];
-                this.onAudioChangeCallbacks = [];
-                this.firstFrameReported = false;
+        /* ================================================================
+           PARTICLE FX SYSTEM — ambient stardust + creature trail + ripple
+           ================================================================ */
+        const ParticleSystem = (() => {
+            const canvas = document.getElementById('particleCanvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            let trailParticles = [];
+            let ripples = [];
+            let frameCount = 0;
+            let creaturePos = { x: 100, y: 100 };
+            let creatureColor = 'rgba(124,77,255,';
 
-                this.initSDK();
+            function resize() {
+                const gw = document.getElementById('gameWorld');
+                canvas.width  = gw.offsetWidth;
+                canvas.height = gw.offsetHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            // Spawn ambient stardust
+            function spawnAmbient() {
+                const w = canvas.width, h = canvas.height;
+                const isBlue = Math.random() > 0.5;
+                return {
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    r: Math.random() * 1.8 + 0.5,
+                    alpha: Math.random() * 0.5 + 0.15,
+                    vx: (Math.random() - 0.5) * 0.25,
+                    vy: -(Math.random() * 0.35 + 0.08),
+                    sinOffset: Math.random() * Math.PI * 2,
+                    sinSpeed: Math.random() * 0.02 + 0.008,
+                    sinAmp: Math.random() * 0.6 + 0.2,
+                    color: isBlue ? '100,210,255,' : '124,77,255,',
+                    life: 1,
+                    type: 'ambient'
+                };
             }
 
-            initSDK() {
-                console.log(`[PlayablesBridge] Initializing. IN_PLAYABLES_ENV = ${this.isPlayables}`);
-
-                if (typeof ytgame !== 'undefined' && ytgame.system) {
-                    try {
-                        if (typeof ytgame.system.isAudioEnabled === 'function') {
-                            this.audioEnabled = ytgame.system.isAudioEnabled();
-                        }
-                        if (typeof ytgame.system.onAudioEnabledChange === 'function') {
-                            ytgame.system.onAudioEnabledChange((enabled) => {
-                                console.log(`[PlayablesBridge] YouTube Audio Changed: ${enabled}`);
-                                this.audioEnabled = enabled;
-                                this.onAudioChangeCallbacks.forEach(cb => cb(enabled));
-                            });
-                        }
-                        if (typeof ytgame.system.onPause === 'function') {
-                            ytgame.system.onPause(() => {
-                                console.log(`[PlayablesBridge] YouTube onPause event fired.`);
-                                this.onPauseCallbacks.forEach(cb => cb());
-                            });
-                        }
-                        if (typeof ytgame.system.onResume === 'function') {
-                            ytgame.system.onResume(() => {
-                                console.log(`[PlayablesBridge] YouTube onResume event fired.`);
-                                this.onResumeCallbacks.forEach(cb => cb());
-                            });
-                        }
-                    } catch (err) {
-                        this.logWarning('Error initializing Playables system listeners: ' + err);
-                    }
-                }
+            // Pre-fill ambient particles
+            for (let i = 0; i < 55; i++) {
+                const p = spawnAmbient();
+                p.y = Math.random() * canvas.height; // distribute vertically
+                particles.push(p);
             }
 
-            notifyFirstFrame() {
-                if (this.firstFrameReported) return;
-                this.firstFrameReported = true;
-                try {
-                    if (typeof ytgame !== 'undefined' && ytgame.game && typeof ytgame.game.firstFrameReady === 'function') {
-                        ytgame.game.firstFrameReady();
-                        console.log('[PlayablesBridge] ytgame.game.firstFrameReady() notified successfully.');
-                    }
-                } catch (err) {
-                    this.logWarning('firstFrameReady error: ' + err);
-                }
+            // Spawn creature trail particle
+            function spawnTrail(x, y, color) {
+                trailParticles.push({
+                    x: x + (Math.random() - 0.5) * 12,
+                    y: y + (Math.random() - 0.5) * 12,
+                    r: Math.random() * 4 + 2,
+                    alpha: 0.6,
+                    vx: (Math.random() - 0.5) * 0.8,
+                    vy: -(Math.random() * 0.6 + 0.2),
+                    decay: Math.random() * 0.025 + 0.02,
+                    scaleDecay: Math.random() * 0.02 + 0.015,
+                    color
+                });
             }
 
-            notifyGameReady() {
-                try {
-                    if (typeof ytgame !== 'undefined' && ytgame.game && typeof ytgame.game.gameReady === 'function') {
-                        ytgame.game.gameReady();
-                        console.log('[PlayablesBridge] ytgame.game.gameReady() notified successfully.');
-                    }
-                } catch (err) {
-                    this.logWarning('gameReady error: ' + err);
-                }
+            // Add a touch ripple
+            function addRipple(x, y) {
+                ripples.push({ x, y, r: 0, maxR: 60, alpha: 0.55 });
             }
 
-            async saveData(dataObj) {
-                const jsonStr = JSON.stringify(dataObj);
-                try {
-                    if (this.isPlayables && typeof ytgame !== 'undefined' && ytgame.game?.saveData) {
-                        await ytgame.game.saveData(jsonStr);
-                        console.log('[PlayablesBridge] Cloud save succeeded via ytgame.game.saveData()');
-                        return true;
+            function update() {
+                frameCount++;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Ambient stardust
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.sinOffset += p.sinSpeed;
+                    p.x += p.vx + Math.sin(p.sinOffset) * p.sinAmp;
+                    p.y += p.vy;
+                    if (p.y < -5 || p.x < -10 || p.x > canvas.width + 10) {
+                        particles[i] = spawnAmbient();
+                        particles[i].y = canvas.height + 5;
                     }
-                } catch (err) {
-                    this.logError('Cloud save error: ' + err);
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(${p.color}${p.alpha})`;
+                    ctx.fill();
                 }
 
-                try {
-                    localStorage.setItem('REVERSE_EVOLUTION_SAVE', jsonStr);
-                    console.log('[PlayablesBridge] LocalStorage save fallback succeeded.');
-                    return true;
-                } catch (e) {
-                    console.warn('[PlayablesBridge] LocalStorage save failed:', e);
-                    return false;
+                // Creature trail (spawn every 3 frames when moving)
+                if (frameCount % 3 === 0) {
+                    spawnTrail(creaturePos.x + 20, creaturePos.y + 20, creatureColor);
                 }
+                for (let i = trailParticles.length - 1; i >= 0; i--) {
+                    const p = trailParticles[i];
+                    p.alpha -= p.decay;
+                    p.r -= p.scaleDecay;
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if (p.alpha <= 0 || p.r <= 0) { trailParticles.splice(i, 1); continue; }
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(${p.color}${p.alpha.toFixed(2)})`;
+                    ctx.fill();
+                }
+
+                // Touch ripples
+                for (let i = ripples.length - 1; i >= 0; i--) {
+                    const rp = ripples[i];
+                    rp.r += 2.8;
+                    rp.alpha -= 0.016;
+                    if (rp.alpha <= 0 || rp.r > rp.maxR) { ripples.splice(i, 1); continue; }
+                    ctx.beginPath();
+                    ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255,255,255,${rp.alpha.toFixed(2)})`;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+
+                requestAnimationFrame(update);
             }
 
-            async loadData() {
-                try {
-                    if (this.isPlayables && typeof ytgame !== 'undefined' && ytgame.game?.loadData) {
-                        const raw = await ytgame.game.loadData();
-                        if (raw && typeof raw === 'string') {
-                            console.log('[PlayablesBridge] Cloud load succeeded via ytgame.game.loadData()');
-                            return JSON.parse(raw);
-                        }
-                    }
-                } catch (err) {
-                    this.logWarning('Cloud load error: ' + err);
-                }
+            requestAnimationFrame(update);
 
-                try {
-                    const localRaw = localStorage.getItem('REVERSE_EVOLUTION_SAVE');
-                    if (localRaw) {
-                        return JSON.parse(localRaw);
-                    }
-                } catch (e) {
-                    console.warn('[PlayablesBridge] LocalStorage load failed:', e);
-                }
-                return null;
-            }
+            return { addRipple, setCreaturePos(x, y) { creaturePos = { x, y }; }, setCreatureColor(c) { creatureColor = c; } };
+        })();
 
-            async sendScore(scoreValue) {
-                const val = Math.floor(Math.max(0, scoreValue));
-                try {
-                    if (typeof ytgame !== 'undefined' && ytgame.engagement?.sendScore) {
-                        await ytgame.engagement.sendScore({ value: val });
-                        console.log(`[PlayablesBridge] Score ${val} sent to YouTube successfully.`);
-                    }
-                } catch (err) {
-                    this.logWarning('sendScore error: ' + err);
-                }
-            }
-
-            async requestInterstitialAd() {
-                console.log('[PlayablesBridge] Requesting Interstitial Ad...');
-                try {
-                    if (typeof ytgame !== 'undefined' && ytgame.ads?.requestInterstitialAd) {
-                        await ytgame.ads.requestInterstitialAd();
-                        console.log('[PlayablesBridge] Interstitial ad completed.');
-                        return true;
-                    }
-                } catch (err) {
-                    this.logWarning('Interstitial ad failed or dismissed: ' + err);
-                }
-                return false;
-            }
-
-            async requestRewardedAd(rewardId = 'adapt-clue-reward-01') {
-                console.log(`[PlayablesBridge] Requesting Rewarded Ad for ${rewardId}...`);
-                try {
-                    if (typeof ytgame !== 'undefined' && ytgame.ads?.requestRewardedAd) {
-                        const isRewardEarned = await ytgame.ads.requestRewardedAd(rewardId);
-                        console.log(`[PlayablesBridge] Rewarded ad result: ${isRewardEarned}`);
-                        return Boolean(isRewardEarned);
-                    }
-                } catch (err) {
-                    this.logWarning('Rewarded ad failed: ' + err);
-                }
-                if (!this.isPlayables) {
-                    console.log('[PlayablesBridge] Local fallback: Simulated rewarded ad granted.');
-                    return true;
-                }
-                return false;
-            }
-
-            async getLanguage() {
-                try {
-                    if (typeof ytgame !== 'undefined' && ytgame.system?.getLanguage) {
-                        return await ytgame.system.getLanguage();
-                    }
-                } catch (err) {
-                    this.logWarning('getLanguage error: ' + err);
-                }
-                return navigator.language || 'en-US';
-            }
-
-            logError(msg) {
-                console.error('[Playables Error]', msg);
-                try {
-                    if (typeof ytgame !== 'undefined' && ytgame.health?.logError) {
-                        ytgame.health.logError();
-                    }
-                } catch (_) {}
-            }
-
-            logWarning(msg) {
-                console.warn('[Playables Warning]', msg);
-                try {
-                    if (typeof ytgame !== 'undefined' && ytgame.health?.logWarning) {
-                        ytgame.health.logWarning();
-                    }
-                } catch (_) {}
-            }
-        }
-
-        /**
-         * ========================================================================
-         * Synthesized Web Audio Engine (100% CSP Compliant & Zero Dependencies)
-         * ========================================================================
-         */
+        /* ================================================================
+           SOUND ENGINE — Web Audio API (zero external files, CSP safe)
+           ================================================================ */
         class SoundEngine {
-            constructor(bridge) {
-                this.bridge = bridge;
+            constructor(platform) {
+                this.platform = platform;
                 this.ctx = null;
                 this.enabled = true;
-
-                this.bridge.onAudioChangeCallbacks.push((enabled) => {
+                this.platform.onAudioChange((enabled) => {
                     this.enabled = enabled;
                     this.updateUI();
                 });
@@ -815,91 +1218,65 @@
 
             init() {
                 if (!this.ctx) {
-                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                    if (AudioCtx) {
-                        this.ctx = new AudioCtx();
-                    }
+                    const A = window.AudioContext || window.webkitAudioContext;
+                    if (A) this.ctx = new A();
                 }
-                if (this.ctx && this.ctx.state === 'suspended') {
-                    this.ctx.resume();
-                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
             }
 
             playTone(freq, type = 'sine', duration = 0.15, gainVal = 0.1) {
-                if (!this.enabled || !this.bridge.audioEnabled) return;
+                if (!this.enabled || !this.platform.isAudioEnabled) return;
                 try {
                     this.init();
                     if (!this.ctx) return;
-
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
-
                     osc.type = type;
                     osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-
                     gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
                     gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
-
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
-
                     osc.start();
                     osc.stop(this.ctx.currentTime + duration);
-                } catch (e) {}
+                } catch(e) {}
             }
 
-            playMove() {
-                this.playTone(180, 'triangle', 0.05, 0.03);
-            }
-
+            playMove() { this.playTone(180, 'triangle', 0.05, 0.03); }
             playDevolve() {
-                if (!this.enabled || !this.bridge.audioEnabled) return;
+                if (!this.enabled || !this.platform.isAudioEnabled) return;
                 try {
                     this.init();
                     if (!this.ctx) return;
                     const now = this.ctx.currentTime;
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
-
                     osc.type = 'sawtooth';
                     osc.frequency.setValueAtTime(440, now);
                     osc.frequency.exponentialRampToValueAtTime(140, now + 0.25);
-
                     gain.gain.setValueAtTime(0.12, now);
                     gain.gain.linearRampToValueAtTime(0.001, now + 0.25);
-
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
-
                     osc.start(now);
                     osc.stop(now + 0.25);
-                } catch (e) {}
+                } catch(e) {}
             }
 
             playSuccess() {
-                if (!this.enabled || !this.bridge.audioEnabled) return;
-                const notes = [261.63, 329.63, 392.00, 523.25];
-                notes.forEach((freq, idx) => {
-                    setTimeout(() => this.playTone(freq, 'sine', 0.2, 0.1), idx * 70);
-                });
-            }
-
-            playWarning() {
-                this.playTone(130, 'square', 0.2, 0.08);
+                if (!this.enabled || !this.platform.isAudioEnabled) return;
+                [261.63, 329.63, 392.00, 523.25].forEach((f, i) =>
+                    setTimeout(() => this.playTone(f, 'sine', 0.2, 0.1), i * 70));
             }
 
             playLevelUp() {
-                const notes = [330, 392, 493, 587, 659];
-                notes.forEach((freq, idx) => {
-                    setTimeout(() => this.playTone(freq, 'triangle', 0.25, 0.12), idx * 80);
-                });
+                [330, 392, 493, 587, 659].forEach((f, i) =>
+                    setTimeout(() => this.playTone(f, 'triangle', 0.25, 0.12), i * 80));
             }
 
             playVictory() {
-                const fanfare = [523.25, 523.25, 523.25, 659.25, 783.99, 1046.50];
-                fanfare.forEach((freq, idx) => {
-                    setTimeout(() => this.playTone(freq, 'sine', 0.4, 0.15), idx * 140);
-                });
+                [523.25, 523.25, 523.25, 659.25, 783.99, 1046.50].forEach((f, i) =>
+                    setTimeout(() => this.playTone(f, 'sine', 0.4, 0.15), i * 140));
             }
 
             toggle() {
@@ -909,33 +1286,26 @@
             }
 
             updateUI() {
-                const btn = document.getElementById('btnSoundToggle');
-                if (btn) {
-                    btn.textContent = (this.enabled && this.bridge.audioEnabled) ? '🔊 Audio: ON' : '🔇 Audio: OFF';
-                }
+                const on = this.enabled && this.platform.isAudioEnabled;
+                const di = document.getElementById('diAudioBtn');
+                if (di) di.textContent = on ? '🔊' : '🔇';
             }
         }
 
-        /**
-         * ========================================================================
-         * Reverse Evolution Game Core
-         * ========================================================================
-         */
+        /* ================================================================
+           REVERSE EVOLUTION — GAME CORE
+           ================================================================ */
         class ReverseEvolutionGame {
             constructor() {
-                this.bridge = new YouTubePlayablesBridge();
-                this.sound = new SoundEngine(this.bridge);
+                this.platform = UniversalPlatformManager.detectAdapter();
+                this.sound = new SoundEngine(this.platform);
 
                 this.creature = {
-                    x: 100,
-                    y: 100,
-                    traits: {
-                        strength: 100,
-                        speed: 100,
-                        intelligence: 100,
-                        vision: 100
-                    },
-                    form: '🦎'
+                    x: 100, y: 100,
+                    vx: 0, vy: 0,     // smoothed velocity for banking
+                    traits: { strength: 100, speed: 100, intelligence: 100, vision: 100 },
+                    form: '🦎',
+                    prevForm: '🦎'
                 };
 
                 this.level = 1;
@@ -946,6 +1316,9 @@
                 this.keys = {};
                 this.touchDirection = { x: 0, y: 0 };
                 this.survivedCurrent = false;
+                this._bankAngle = 0;   // running average for creature tilt
+                this._idleTimer = 0;
+                this._moving = false;
 
                 this.levelData = {
                     1: {
@@ -958,13 +1331,13 @@
                         name: "The Maze of Minds",
                         description: "Ancient glyphs trigger traps when scanned by intelligent minds.",
                         challenge: { type: 'trap', requirement: 'intelligence', threshold: 40 },
-                        hint: "Reduce Intelligence below 40. Ignorance allows safe passage through the mind maze."
+                        hint: "Reduce Intelligence below 40. Ignorance allows safe passage."
                     },
                     3: {
                         name: "The Toxic Garden",
                         description: "Giant bodies absorb massive doses of floral neurotoxin.",
                         challenge: { type: 'poison', requirement: 'strength', threshold: 20 },
-                        hint: "Devolve Strength below 20. A miniscule body avoids inhaling concentrated toxins."
+                        hint: "Devolve Strength below 20. A miniscule body avoids the toxin clouds."
                     },
                     4: {
                         name: "The Blinding Storm",
@@ -974,9 +1347,9 @@
                     },
                     5: {
                         name: "The Final Test",
-                        description: "The Crucible of Adaptability: Have exactly ONE trait above 50, all others <= 50!",
+                        description: "Crucible of Adaptability: Have exactly ONE trait above 50, all others ≤ 50!",
                         challenge: { type: 'final', requirement: 'all', threshold: 50 },
-                        hint: "Strategic re-evolution! Ensure exactly ONE trait exceeds 50 to unlock ultimate balance."
+                        hint: "Ensure exactly ONE trait exceeds 50 to unlock ultimate balance."
                     }
                 };
 
@@ -984,78 +1357,79 @@
             }
 
             async init() {
+                await this.platform.init();
                 this.setupDOM();
                 this.setupEventListeners();
-                this.updateSDKStatusBadge();
-
+                this.updatePlatformUI();
                 await this.loadSaveData();
-
                 this.generateLevel();
-
                 this.updateTraitBars();
-                this.updateCreatureAppearance();
+                this.updateCreatureAppearance(false);
                 this.updateScoreUI();
 
                 requestAnimationFrame(() => {
-                    this.bridge.notifyFirstFrame();
+                    this.platform.notifyFirstFrame();
                     this.gameLoop();
-                    this.bridge.notifyGameReady();
+                    this.platform.notifyGameReady();
+                    this.platform.gameplayStart();
                 });
 
-                this.showToast("🧬 Reverse Evolution loaded! Devolve to survive.");
+                this.showToast(`🧬 Loaded on ${this.platform.name}!`);
             }
 
-            updateSDKStatusBadge() {
-                const dot = document.getElementById('sdkStatusDot');
-                const text = document.getElementById('sdkStatusText');
-                if (this.bridge.isPlayables) {
-                    dot.style.backgroundColor = '#2ecc71';
-                    text.textContent = 'YouTube Playables Connected';
-                } else {
-                    dot.style.backgroundColor = '#f1c40f';
-                    text.textContent = 'Web / Standalone Mode';
+            updatePlatformUI() {
+                const label = document.getElementById('platformNameLabel');
+                if (label) label.textContent = this.platform.name;
+
+                // Short badge for Dynamic Island
+                const badgeEl = document.getElementById('diPlatformBadge');
+                if (badgeEl) {
+                    const shortNames = {
+                        'YouTube Playables': 'YT', 'Facebook Instant Games': 'FB',
+                        'CrazyGames': 'CG', 'Poki': 'POKI', 'Yandex Games': 'YA',
+                        'Playhop': 'HOP', 'GameDistribution': 'GD', 'JioGames': 'JIO',
+                        'Discord Activities': 'DC', 'Lagged': 'LGD', 'Y8 Games': 'Y8',
+                        'Microsoft Store': 'MS', 'Standalone Web': 'WEB'
+                    };
+                    badgeEl.textContent = shortNames[this.platform.name] || this.platform.name.substring(0, 3).toUpperCase();
                 }
+
+                const curPlat = UniversalPlatformManager.getPlatformFromUrl() || 'youtube';
+                document.querySelectorAll('.platform-choice-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-plat') === curPlat);
+                });
             }
 
             async loadSaveData() {
-                const data = await this.bridge.loadData();
+                const data = await this.platform.loadData();
                 if (data && typeof data === 'object') {
                     if (data.level && data.level >= 1 && data.level <= 5) this.level = data.level;
                     if (data.highScore) this.highScore = data.highScore;
-                    if (data.traits) {
-                        this.creature.traits = Object.assign({}, this.creature.traits, data.traits);
-                    }
-                    console.log('[Game] Restored save data:', data);
+                    if (data.traits) this.creature.traits = Object.assign({}, this.creature.traits, data.traits);
                 }
             }
 
             async persistGame() {
-                const savePayload = {
+                await this.platform.saveData({
                     level: this.level,
                     highScore: this.highScore,
                     traits: this.creature.traits,
                     timestamp: Date.now()
-                };
-                await this.bridge.saveData(savePayload);
+                });
             }
 
             setupDOM() {
-                this.bridge.onPauseCallbacks.push(() => this.pauseGame(true));
-                this.bridge.onResumeCallbacks.push(() => this.resumeGame());
+                this.platform.onPause(() => this.pauseGame(true));
+                this.platform.onResume(() => this.resumeGame());
             }
 
             setupEventListeners() {
                 window.addEventListener('keydown', (e) => {
                     this.keys[e.key] = true;
-                    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
-                        e.preventDefault();
-                    }
+                    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
                     this.sound.init();
                 });
-
-                window.addEventListener('keyup', (e) => {
-                    this.keys[e.key] = false;
-                });
+                window.addEventListener('keyup', (e) => { this.keys[e.key] = false; });
 
                 document.getElementById('btnDevolveStrength').addEventListener('click', () => this.devolveTrait('strength'));
                 document.getElementById('btnDevolveSpeed').addEventListener('click', () => this.devolveTrait('speed'));
@@ -1063,63 +1437,56 @@
                 document.getElementById('btnDevolveVision').addEventListener('click', () => this.devolveTrait('vision'));
 
                 document.getElementById('btnRewardedAd').addEventListener('click', () => this.handleRewardedAd());
+                document.getElementById('diAudioBtn').addEventListener('click', () => { this.sound.toggle(); this.sound.init(); });
+                document.getElementById('btnPauseGame').addEventListener('click', () => this.pauseGame());
+                document.getElementById('btnResumeGame').addEventListener('click', () => this.resumeGame());
+                document.getElementById('btnRestartGame').addEventListener('click', () => this.restartLevel());
+                document.getElementById('btnPlayAgain').addEventListener('click', () => this.handlePlayAgain());
 
-                document.getElementById('btnSoundToggle').addEventListener('click', () => {
-                    this.sound.toggle();
+                // Platform switcher
+                document.getElementById('btnOpenPlatformSwitcher').addEventListener('click', () => {
+                    document.getElementById('platformSwitcherModal').style.display = 'flex';
+                });
+                document.getElementById('btnClosePlatformSwitcher').addEventListener('click', () => {
+                    document.getElementById('platformSwitcherModal').style.display = 'none';
                 });
 
-                document.getElementById('btnPauseGame').addEventListener('click', () => {
-                    this.pauseGame();
-                });
-
-                document.getElementById('btnResumeGame').addEventListener('click', () => {
-                    this.resumeGame();
-                });
-
-                document.getElementById('btnRestartGame').addEventListener('click', () => {
-                    this.restartLevel();
-                });
-
-                document.getElementById('btnPlayAgain').addEventListener('click', () => {
-                    this.handlePlayAgain();
-                });
-
-                const dpadButtons = document.querySelectorAll('.dpad-btn');
-                dpadButtons.forEach(btn => {
+                // Mobile D-Pad
+                document.querySelectorAll('.dpad-btn').forEach(btn => {
                     const dir = btn.getAttribute('data-dir');
-                    const startMove = (e) => {
+                    const start = (e) => {
                         e.preventDefault();
                         this.sound.init();
-                        if (dir === 'up') this.touchDirection.y = -1;
-                        if (dir === 'down') this.touchDirection.y = 1;
-                        if (dir === 'left') this.touchDirection.x = -1;
+                        if (dir === 'up')    this.touchDirection.y = -1;
+                        if (dir === 'down')  this.touchDirection.y = 1;
+                        if (dir === 'left')  this.touchDirection.x = -1;
                         if (dir === 'right') this.touchDirection.x = 1;
                     };
-                    const endMove = (e) => {
+                    const end = (e) => {
                         e.preventDefault();
-                        if (dir === 'up' || dir === 'down') this.touchDirection.y = 0;
+                        if (dir === 'up' || dir === 'down')   this.touchDirection.y = 0;
                         if (dir === 'left' || dir === 'right') this.touchDirection.x = 0;
                     };
-                    btn.addEventListener('touchstart', startMove, { passive: false });
-                    btn.addEventListener('touchend', endMove, { passive: false });
-                    btn.addEventListener('mousedown', startMove);
-                    btn.addEventListener('mouseup', endMove);
+                    btn.addEventListener('touchstart', start, { passive: false });
+                    btn.addEventListener('touchend', end, { passive: false });
+                    btn.addEventListener('mousedown', start);
+                    btn.addEventListener('mouseup', end);
                 });
 
+                // Tap-to-move + ripple FX
                 const gameWorld = document.getElementById('gameWorld');
                 gameWorld.addEventListener('pointerdown', (e) => {
-                    if (e.target.closest('.mobile-dpad') || e.target.closest('.controls')) return;
+                    if (e.target.closest('.mobile-dpad') || e.target.closest('.dynamic-island')) return;
                     this.sound.init();
                     const rect = gameWorld.getBoundingClientRect();
-                    const targetX = e.clientX - rect.left - 30;
-                    const targetY = e.clientY - rect.top - 30;
-
-                    this.creature.x = Math.max(10, Math.min(rect.width - 70, targetX));
-                    this.creature.y = Math.max(10, Math.min(rect.height - 70, targetY));
-
+                    const nx = Math.max(10, Math.min(rect.width - 70,  e.clientX - rect.left - 30));
+                    const ny = Math.max(10, Math.min(rect.height - 70, e.clientY - rect.top - 30));
+                    this.creature.x = nx;
+                    this.creature.y = ny;
                     const creatureEl = document.getElementById('creature');
-                    creatureEl.style.left = this.creature.x + 'px';
-                    creatureEl.style.top = this.creature.y + 'px';
+                    creatureEl.style.left = nx + 'px';
+                    creatureEl.style.top  = ny + 'px';
+                    ParticleSystem.addRipple(e.clientX - rect.left, e.clientY - rect.top);
                     this.sound.playMove();
                 });
             }
@@ -1132,7 +1499,9 @@
                 document.querySelectorAll('.environment').forEach(el => el.remove());
                 document.querySelectorAll('.challenge').forEach(el => el.remove());
 
-                document.getElementById('levelIndicator').textContent = `Level ${this.level}: ${levelInfo.name}`;
+                // Update Dynamic Island
+                const diName = document.getElementById('diLevelName');
+                if (diName) diName.textContent = levelInfo.name;
 
                 this.generateEnvironment(levelInfo);
                 this.createChallenge(levelInfo.challenge);
@@ -1144,81 +1513,54 @@
                 const w = gameWorld.offsetWidth || 600;
                 const h = gameWorld.offsetHeight || 400;
 
-                switch (this.level) {
-                    case 1:
-                        gameWorld.style.background = 'linear-gradient(180deg, #3a2e39 0%, #1e1b29 100%)';
-                        for (let i = 0; i < 4; i++) {
-                            const pred = document.createElement('div');
-                            pred.className = 'environment predator';
-                            pred.textContent = ['🦁', '🐺', '🦅', '🐅'][i % 4];
-                            pred.style.left = Math.random() * (w - 70) + 'px';
-                            pred.style.top = (Math.random() * (h - 140) + 40) + 'px';
-                            pred.style.animationDelay = (i * 0.4) + 's';
-                            gameWorld.appendChild(pred);
-                        }
-                        break;
+                const levelBgs = {
+                    1: 'linear-gradient(165deg, #2a1d35 0%, #170f26 60%, #0c0818 100%)',
+                    2: 'linear-gradient(165deg, #0f1c38 0%, #090e1c 60%, #05080f 100%)',
+                    3: 'linear-gradient(165deg, #1d1f32 0%, #101218 60%, #0a0c0f 100%)',
+                    4: 'linear-gradient(165deg, #1a1838 0%, #0e0c24 60%, #06050f 100%)',
+                    5: 'linear-gradient(165deg, #10082a 0%, #07050f 100%)'
+                };
+                gameWorld.style.background = levelBgs[this.level];
 
-                    case 2:
-                        gameWorld.style.background = 'linear-gradient(180deg, #1b263b 0%, #0d1b2a 100%)';
-                        for (let i = 0; i < 5; i++) {
-                            const trap = document.createElement('div');
-                            trap.className = 'environment obstacle';
-                            trap.textContent = ['⚡', '🔥', '⚙️', '🕳️', '🌀'][i % 5];
-                            trap.style.left = Math.random() * (w - 70) + 'px';
-                            trap.style.top = (Math.random() * (h - 140) + 40) + 'px';
-                            gameWorld.appendChild(trap);
-                        }
-                        break;
+                const entities = {
+                    1: { cls: 'predator',   icons: ['🦁','🐺','🦅','🐅'], count: 4 },
+                    2: { cls: 'obstacle',   icons: ['⚡','🔥','⚙️','🕳️','🌀'], count: 5 },
+                    3: { cls: 'toxic-plant',icons: ['🍄','🌺','🌿','🥀','🌵','🪻'], count: 6 },
+                    4: { cls: 'environment',icons: ['⚡','🌪️','☁️','❄️','👁️‍🗨️','☄️'], count: 6, customFilter: 'drop-shadow(0 0 18px rgba(124,77,255,0.85)) drop-shadow(0 0 40px rgba(191,90,242,0.5))' },
+                    5: null
+                };
 
-                    case 3:
-                        gameWorld.style.background = 'linear-gradient(180deg, #2d3142 0%, #1c1924 100%)';
-                        for (let i = 0; i < 6; i++) {
-                            const plant = document.createElement('div');
-                            plant.className = 'environment toxic-plant';
-                            plant.textContent = ['🍄', '🌺', '🌿', '🥀', '🌵', '🪻'][i % 6];
-                            plant.style.left = Math.random() * (w - 70) + 'px';
-                            plant.style.top = (Math.random() * (h - 140) + 40) + 'px';
-                            gameWorld.appendChild(plant);
-                        }
-                        break;
+                if (this.level === 5) {
+                    const altar = document.createElement('div');
+                    altar.className = 'environment';
+                    altar.textContent = '🏛️';
+                    altar.style.cssText = `left:50%;top:35%;transform:translate(-50%,-50%);font-size:72px;filter:drop-shadow(0 0 35px rgba(241,196,15,0.9)) drop-shadow(0 0 70px rgba(241,196,15,0.5));`;
+                    gameWorld.appendChild(altar);
+                    return;
+                }
 
-                    case 4:
-                        gameWorld.style.background = 'linear-gradient(180deg, #2b2d42 0%, #1a1a2e 100%)';
-                        for (let i = 0; i < 6; i++) {
-                            const storm = document.createElement('div');
-                            storm.className = 'environment';
-                            storm.textContent = ['⚡', '🌪️', '☁️', '❄️', '👁️‍🗨️', '☄️'][i % 6];
-                            storm.style.left = Math.random() * (w - 70) + 'px';
-                            storm.style.top = (Math.random() * (h - 140) + 40) + 'px';
-                            storm.style.filter = 'drop-shadow(0 0 16px rgba(124, 77, 255, 0.8))';
-                            gameWorld.appendChild(storm);
-                        }
-                        break;
-
-                    case 5:
-                        gameWorld.style.background = 'linear-gradient(180deg, #141124 0%, #0a0812 100%)';
-                        const altar = document.createElement('div');
-                        altar.className = 'environment';
-                        altar.textContent = '🏛️';
-                        altar.style.left = '50%';
-                        altar.style.top = '35%';
-                        altar.style.transform = 'translate(-50%, -50%)';
-                        altar.style.fontSize = '68px';
-                        altar.style.filter = 'drop-shadow(0 0 35px rgba(241, 196, 15, 0.9))';
-                        gameWorld.appendChild(altar);
-                        break;
+                const cfg = entities[this.level];
+                if (!cfg) return;
+                for (let i = 0; i < cfg.count; i++) {
+                    const el = document.createElement('div');
+                    el.className = 'environment ' + cfg.cls;
+                    el.textContent = cfg.icons[i % cfg.icons.length];
+                    el.style.left = Math.random() * (w - 80) + 'px';
+                    el.style.top  = (Math.random() * (h - 150) + 50) + 'px';
+                    el.style.animationDelay = -(Math.random() * 5) + 's';
+                    if (cfg.customFilter) el.style.filter = cfg.customFilter;
+                    gameWorld.appendChild(el);
                 }
             }
 
             createChallenge(challengeData) {
                 const gameWorld = document.getElementById('gameWorld');
-                const challenge = document.createElement('div');
-                challenge.className = 'challenge';
-                challenge.id = 'currentChallenge';
-                challenge.innerHTML = this.getChallengeText(challengeData);
-                challenge.style.left = '50%';
-                challenge.style.top = '12%';
-                gameWorld.appendChild(challenge);
+                const el = document.createElement('div');
+                el.className = 'challenge';
+                el.id = 'currentChallenge';
+                el.innerHTML = this.getChallengeText(challengeData);
+                el.style.top = '13%';
+                gameWorld.appendChild(el);
             }
 
             getChallengeText(challengeData) {
@@ -1227,86 +1569,99 @@
 
                 switch (challengeData.type) {
                     case 'predator':
-                        return survived ?
-                            `✅ Predators ignore your frailty! (Strength: ${traitValue})` :
-                            `⚠️ Too strong! Apex predators are hunting you!<br>Devolve Strength to ${challengeData.threshold} or below.`;
-
+                        return survived
+                            ? `✅ Predators ignore your frailty! (Strength: ${traitValue})`
+                            : `⚠️ Too strong! Predators are hunting you!<br><small>Devolve Strength to ${challengeData.threshold} or below</small>`;
                     case 'trap':
-                        return survived ?
-                            `✅ Too simple to trigger arcane glyphs! (Intelligence: ${traitValue})` :
-                            `⚠️ High intelligence sets off cognitive traps!<br>Devolve Intelligence to ${challengeData.threshold} or below.`;
-
+                        return survived
+                            ? `✅ Too simple to trigger arcane glyphs! (Intelligence: ${traitValue})`
+                            : `⚠️ High intelligence sets off cognitive traps!<br><small>Devolve Intelligence to ${challengeData.threshold} or below</small>`;
                     case 'poison':
-                        return survived ?
-                            `✅ Miniscule body avoids lethal toxin absorption! (Strength: ${traitValue})` :
-                            `⚠️ Bulky physique absorbs lethal spore cloud!<br>Devolve Strength to ${challengeData.threshold} or below.`;
-
+                        return survived
+                            ? `✅ Miniscule body avoids lethal toxin! (Strength: ${traitValue})`
+                            : `⚠️ Bulky physique absorbs lethal spores!<br><small>Devolve Strength to ${challengeData.threshold} or below</small>`;
                     case 'storm':
-                        return survived ?
-                            `✅ Sensory darkness shields your sanity! (Vision: ${traitValue})` :
-                            `⚠️ Cosmic aurora overloads sharp vision!<br>Devolve Vision to ${challengeData.threshold} or below.`;
-
+                        return survived
+                            ? `✅ Sensory darkness shields your sanity! (Vision: ${traitValue})`
+                            : `⚠️ Cosmic aurora overloads sharp vision!<br><small>Devolve Vision to ${challengeData.threshold} or below</small>`;
                     case 'final':
-                        const highTraits = Object.entries(this.creature.traits).filter(([k, v]) => v > 50);
-                        if (highTraits.length === 1) {
-                            return `✅ Perfect Adaptation! Exactly ONE dominant trait (${highTraits[0][0]}: ${highTraits[0][1]}).`;
-                        } else {
-                            return `⚠️ Crucible Rule: Have exactly ONE trait above 50!<br>(Currently ${highTraits.length} traits > 50)`;
-                        }
+                        const high = Object.entries(this.creature.traits).filter(([,v]) => v > 50);
+                        return high.length === 1
+                            ? `✅ Perfect Adaptation! One dominant trait: ${high[0][0]}: ${high[0][1]}`
+                            : `⚠️ Crucible Rule: Exactly ONE trait above 50!<br><small>(Currently ${high.length} traits > 50)</small>`;
                 }
             }
 
-            updateCreatureAppearance() {
-                const creature = document.getElementById('creature');
-                const traits = this.creature.traits;
-
+            updateCreatureAppearance(animate = true) {
+                const creatureEl = document.getElementById('creature');
+                const t = this.creature.traits;
                 let form = '🦎';
-                if (traits.strength < 30 && traits.speed < 30) form = '🐛';
-                else if (traits.intelligence < 30) form = '🐌';
-                else if (traits.vision < 30) form = '🦔';
-                else if (traits.strength < 60) form = '🐁';
-                else if (traits.speed < 60) form = '🐢';
+                if (t.strength < 30 && t.speed < 30) form = '🐛';
+                else if (t.intelligence < 30) form = '🐌';
+                else if (t.vision < 30) form = '🦔';
+                else if (t.strength < 60) form = '🐁';
+                else if (t.speed < 60) form = '🐢';
 
-                creature.textContent = form;
+                const changed = (form !== this.creature.form);
                 this.creature.form = form;
+                creatureEl.textContent = form;
 
-                const size = Math.max(34, 30 + (traits.strength / 100) * 32);
-                creature.style.width = size + 'px';
-                creature.style.height = size + 'px';
+                // Size based on strength
+                const size = Math.max(34, 30 + (t.strength / 100) * 32);
+                creatureEl.style.width  = size + 'px';
+                creatureEl.style.height = size + 'px';
+                creatureEl.style.fontSize = (size * 0.72) + 'px';
 
-                const totalTraits = Object.values(traits).reduce((a, b) => a + b, 0);
-                const opacity = Math.max(0.35, totalTraits / 400);
-                creature.style.opacity = opacity;
+                // Opacity fades as creature devolves
+                const total = Object.values(t).reduce((a, b) => a + b, 0);
+                creatureEl.style.opacity = Math.max(0.35, total / 400);
+
+                // Morph burst animation on form change
+                if (changed && animate) {
+                    creatureEl.classList.remove('creature--morph', 'creature--idle');
+                    void creatureEl.offsetWidth; // reflow to restart animation
+                    creatureEl.classList.add('creature--morph');
+                    creatureEl.addEventListener('animationend', () => {
+                        creatureEl.classList.remove('creature--morph');
+                        creatureEl.classList.add('creature--idle');
+                    }, { once: true });
+                }
+
+                // Update particle trail color
+                const trailColors = {
+                    '🦎': '124,77,255,', '🐛': '48,209,88,', '🐌': '100,210,255,',
+                    '🦔': '255,159,10,', '🐁': '191,90,242,', '🐢': '10,132,255,'
+                };
+                ParticleSystem.setCreatureColor(trailColors[form] || '124,77,255,');
             }
 
             devolveTrait(traitName) {
                 if (this.isPaused || !this.gameRunning) return;
-
                 if (this.creature.traits[traitName] > 0) {
                     this.creature.traits[traitName] = Math.max(0, this.creature.traits[traitName] - 25);
                     this.sound.playDevolve();
                     this.updateTraitBars();
-                    this.updateCreatureAppearance();
+                    this.updateCreatureAppearance(true);
                     this.calculateScore();
                     this.checkChallenge(true);
 
-                    const feedbackMessages = {
+                    const msgs = {
                         strength: "Muscles recede into cellular jelly... Vulnerability is your shield.",
                         speed: "Movement slows to a meditative crawl... Haste triggers alarms.",
                         intelligence: "Thoughts dissolve into tranquil instinct... Ignorance is bliss.",
                         vision: "Pupils constrict into restful dark... You see only what is safe."
                     };
-                    this.updateStatus(feedbackMessages[traitName]);
+                    this.updateStatus(msgs[traitName]);
                     this.persistGame();
                 }
             }
 
             calculateScore() {
-                const totalDevolution = 400 - Object.values(this.creature.traits).reduce((a, b) => a + b, 0);
-                this.score = (this.level * 500) + (totalDevolution * 5);
+                const total = 400 - Object.values(this.creature.traits).reduce((a, b) => a + b, 0);
+                this.score = (this.level * 500) + (total * 5);
                 if (this.score > this.highScore) {
                     this.highScore = this.score;
-                    this.bridge.sendScore(this.highScore);
+                    this.platform.submitScore(this.highScore);
                 }
                 this.updateScoreUI();
             }
@@ -1317,93 +1672,98 @@
             }
 
             updateTraitBars() {
-                Object.keys(this.creature.traits).forEach(trait => {
+                const traitNames = ['strength', 'speed', 'intelligence', 'vision'];
+                traitNames.forEach(trait => {
                     const bar = document.getElementById(trait + 'Bar');
+                    const valEl = document.getElementById('val' + trait.charAt(0).toUpperCase() + trait.slice(1));
+                    const card = document.getElementById('card-' + trait);
                     const val = this.creature.traits[trait];
+
                     if (bar) {
                         bar.style.width = val + '%';
-                        if (val <= 30) {
-                            bar.style.background = '#2ecc71';
-                        } else if (val <= 60) {
-                            bar.style.background = '#f39c12';
-                        } else {
-                            bar.style.background = '#e74c3c';
-                        }
+                        const cls = val <= 30 ? 'safe' : val <= 60 ? 'warn' : 'danger';
+                        bar.className = 'trait-fill ' + cls;
+                    }
+                    if (valEl) valEl.textContent = val;
+                    if (card) {
+                        card.classList.remove('safe', 'warn', 'danger');
+                        card.classList.add(val <= 30 ? 'safe' : val <= 60 ? 'warn' : 'danger');
                     }
                 });
+
+                // Update Dynamic Island hazard dot
+                const levelInfo = this.levelData[this.level];
+                const ch = levelInfo?.challenge;
+                const diDot = document.getElementById('diDot');
+                if (diDot && ch) {
+                    const val = ch.requirement === 'all' ? null : this.creature.traits[ch.requirement];
+                    if (val === null) { diDot.className = 'di-dot'; }
+                    else if (val <= ch.threshold) { diDot.className = 'di-dot'; } // green (safe)
+                    else if (val <= ch.threshold + 25) { diDot.className = 'di-dot warn'; }
+                    else { diDot.className = 'di-dot danger'; }
+                }
             }
 
             checkChallenge(playFeedback = true) {
                 const levelInfo = this.levelData[this.level];
-                const challengeData = levelInfo.challenge;
+                const ch = levelInfo.challenge;
                 let survived = false;
 
-                if (challengeData.type === 'final') {
-                    const highTraits = Object.entries(this.creature.traits).filter(([k, v]) => v > 50);
-                    survived = (highTraits.length === 1);
+                if (ch.type === 'final') {
+                    survived = Object.entries(this.creature.traits).filter(([,v]) => v > 50).length === 1;
                 } else {
-                    const traitVal = this.creature.traits[challengeData.requirement];
-                    survived = (traitVal <= challengeData.threshold);
+                    survived = this.creature.traits[ch.requirement] <= ch.threshold;
                 }
 
-                const challengeEl = document.getElementById('currentChallenge');
-                if (challengeEl) {
-                    challengeEl.innerHTML = this.getChallengeText(challengeData);
-                    if (survived) {
-                        challengeEl.classList.add('survived');
-                    } else {
-                        challengeEl.classList.remove('survived');
-                    }
+                const el = document.getElementById('currentChallenge');
+                if (el) {
+                    el.innerHTML = this.getChallengeText(ch);
+                    el.classList.toggle('survived', survived);
                 }
 
                 if (survived && !this.survivedCurrent) {
                     this.survivedCurrent = true;
                     if (playFeedback) this.sound.playSuccess();
-                    this.updateStatus(`🎉 Hazard bypassed! Transitioning to next stratum...`);
-
-                    setTimeout(() => {
-                        this.nextLevel();
-                    }, 1800);
+                    this.updateStatus('🎉 Hazard bypassed! Transitioning to next stratum…');
+                    setTimeout(() => this.nextLevel(), 1800);
                 }
             }
 
             async nextLevel() {
-                if (this.level >= 5) {
-                    this.victory();
-                    return;
-                }
-
-                await this.bridge.requestInterstitialAd();
-
+                if (this.level >= 5) { this.victory(); return; }
+                this.platform.gameplayStop();
+                await this.platform.showInterstitialAd();
+                this.platform.gameplayStart();
                 this.level++;
                 this.calculateScore();
                 this.sound.playLevelUp();
                 this.generateLevel();
                 this.updateStatus(`Stratum ${this.level}: ${this.levelData[this.level].description}`);
                 this.persistGame();
-                this.showToast(`✨ Reached Level ${this.level}`);
+                this.showToast(`✨ Reached Stratum ${this.level}`);
             }
 
             async handleRewardedAd() {
                 this.sound.init();
-                this.updateStatus("Requesting Rewarded Ad from YouTube...");
+                this.updateStatus(`Requesting Rewarded Ad from ${this.platform.name}…`);
+                this.platform.gameplayStop();
+                const granted = await this.platform.showRewardedAd('reward-adapt-hint-101');
+                this.platform.gameplayStart();
 
-                const rewardGranted = await this.bridge.requestRewardedAd('reward-adapt-hint-101');
-                if (rewardGranted) {
+                if (granted) {
                     this.sound.playLevelUp();
-                    const levelInfo = this.levelData[this.level];
-
-                    const req = levelInfo.challenge.requirement;
-                    if (req && this.creature.traits[req] !== undefined && this.creature.traits[req] > levelInfo.challenge.threshold) {
-                        this.creature.traits[req] = levelInfo.challenge.threshold;
+                    const li = this.levelData[this.level];
+                    const req = li.challenge.requirement;
+                    if (req && this.creature.traits[req] !== undefined && this.creature.traits[req] > li.challenge.threshold) {
+                        this.creature.traits[req] = li.challenge.threshold;
                         this.updateTraitBars();
-                        this.updateCreatureAppearance();
+                        this.updateCreatureAppearance(true);
                         this.checkChallenge(true);
-                        this.showToast(`🎁 Rewarded Aid applied: ${req} adapted to ${levelInfo.challenge.threshold}!`);
+                        this.showToast(`🎁 ${req} adapted to ${li.challenge.threshold}!`);
                     } else {
-                        this.showToast(`🎁 Rewarded Hint: ${levelInfo.hint}`);
+                        this.showToast(`💡 Hint: ${li.hint}`);
                     }
-                    this.updateStatus(`💡 Adaptive Hint: ${levelInfo.hint}`);
+                    this.updateStatus(`💡 Adaptive Hint: ${li.hint}`);
                 } else {
                     this.showToast("Rewarded ad was dismissed or unavailable.");
                 }
@@ -1412,22 +1772,22 @@
             pauseGame(fromSystem = false) {
                 if (this.isPaused) return;
                 this.isPaused = true;
+                this.platform.gameplayStop();
                 document.getElementById('pauseScreen').style.display = 'flex';
                 this.persistGame();
-                console.log(`[Game] Paused ${fromSystem ? '(by YouTube System)' : '(by User)'}`);
             }
 
             resumeGame() {
                 if (!this.isPaused) return;
                 this.isPaused = false;
                 document.getElementById('pauseScreen').style.display = 'none';
-                console.log('[Game] Resumed');
+                this.platform.gameplayStart();
             }
 
             restartLevel() {
                 this.creature.traits = { strength: 100, speed: 100, intelligence: 100, vision: 100 };
                 this.updateTraitBars();
-                this.updateCreatureAppearance();
+                this.updateCreatureAppearance(true);
                 this.generateLevel();
                 this.updateStatus("Level traits reset to 100. Devolve strategically!");
                 this.showToast("🔄 Traits reset for current level.");
@@ -1435,39 +1795,35 @@
 
             victory() {
                 this.gameRunning = false;
+                this.platform.gameplayStop();
                 this.sound.playVictory();
                 this.calculateScore();
 
-                const victoryScreen = document.getElementById('victoryScreen');
-                const victoryMessage = document.getElementById('victoryMessage');
-                const totalDevolution = 400 - Object.values(this.creature.traits).reduce((a, b) => a + b, 0);
-
-                victoryMessage.innerHTML = `
-                    <p style="font-size: 16px; color: #55efc4; margin-bottom: 12px;">
+                const total = 400 - Object.values(this.creature.traits).reduce((a, b) => a + b, 0);
+                document.getElementById('victoryMessage').innerHTML = `
+                    <p style="font-size:15px;color:var(--system-teal);margin-bottom:10px;">
                         <strong>Survival of the Weakest Mastered!</strong>
                     </p>
-                    <p>Final Form: <span style="font-size: 26px;">${this.creature.form}</span></p>
-                    <p>Total Devolution: <strong>${totalDevolution}/400</strong></p>
-                    <p>High Score Reported to YouTube: <strong>${this.score}</strong></p>
-                    <p style="font-style: italic; color: #a29bfe; margin-top: 14px;">
+                    <p>Final Form: <span style="font-size:28px;">${this.creature.form}</span></p>
+                    <p>Total Devolution: <strong>${total}/400</strong></p>
+                    <p>Score Reported to ${this.platform.name}: <strong>${this.score}</strong></p>
+                    <p style="font-style:italic;color:var(--system-purple);margin-top:14px;font-size:12px;">
                         "When strength invites destruction, weakness becomes the greatest armor."
-                    </p>
-                `;
-
-                victoryScreen.style.display = 'flex';
+                    </p>`;
+                document.getElementById('victoryScreen').style.display = 'flex';
                 this.persistGame();
             }
 
             async handlePlayAgain() {
                 document.getElementById('victoryScreen').style.display = 'none';
-                await this.bridge.requestInterstitialAd();
-
+                await this.platform.showInterstitialAd();
                 this.level = 1;
                 this.creature.traits = { strength: 100, speed: 100, intelligence: 100, vision: 100 };
                 this.gameRunning = true;
                 this.generateLevel();
                 this.updateTraitBars();
-                this.updateCreatureAppearance();
+                this.updateCreatureAppearance(false);
+                this.platform.gameplayStart();
                 this.updateStatus("Welcome back! Can you conquer the reverse food chain once more?");
             }
 
@@ -1481,12 +1837,13 @@
                 if (!toast) return;
                 toast.textContent = msg;
                 toast.classList.add('show');
-                clearTimeout(this.toastTimer);
-                this.toastTimer = setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 3000);
+                clearTimeout(this._toastTimer);
+                this._toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
             }
 
+            /* ------------------------------------------------------------
+               GAME LOOP — movement + creature banking
+               ------------------------------------------------------------ */
             gameLoop() {
                 if (this.gameRunning && !this.isPaused) {
                     this.handleMovement();
@@ -1501,25 +1858,58 @@
                 const h = gameWorld.offsetHeight || 400;
 
                 const baseSpeed = Math.max(1.5, (this.creature.traits.speed / 100) * 5.5);
+                let dx = 0, dy = 0;
 
-                let dx = 0;
-                let dy = 0;
-
-                if (this.keys['ArrowLeft'] || this.keys['a'] || this.keys['A']) dx -= 1;
+                if (this.keys['ArrowLeft']  || this.keys['a'] || this.keys['A']) dx -= 1;
                 if (this.keys['ArrowRight'] || this.keys['d'] || this.keys['D']) dx += 1;
-                if (this.keys['ArrowUp'] || this.keys['w'] || this.keys['W']) dy -= 1;
-                if (this.keys['ArrowDown'] || this.keys['s'] || this.keys['S']) dy += 1;
-
+                if (this.keys['ArrowUp']    || this.keys['w'] || this.keys['W']) dy -= 1;
+                if (this.keys['ArrowDown']  || this.keys['s'] || this.keys['S']) dy += 1;
                 dx += this.touchDirection.x;
                 dy += this.touchDirection.y;
 
-                if (dx !== 0 || dy !== 0) {
-                    const length = Math.hypot(dx, dy) || 1;
-                    this.creature.x = Math.max(10, Math.min(w - 70, this.creature.x + (dx / length) * baseSpeed));
-                    this.creature.y = Math.max(10, Math.min(h - 70, this.creature.y + (dy / length) * baseSpeed));
+                const isMoving = (dx !== 0 || dy !== 0);
 
+                if (isMoving) {
+                    const len = Math.hypot(dx, dy) || 1;
+                    const mx = (dx / len) * baseSpeed;
+                    const my = (dy / len) * baseSpeed;
+                    this.creature.x = Math.max(10, Math.min(w - 70, this.creature.x + mx));
+                    this.creature.y = Math.max(10, Math.min(h - 70, this.creature.y + my));
                     creatureEl.style.left = this.creature.x + 'px';
-                    creatureEl.style.top = this.creature.y + 'px';
+                    creatureEl.style.top  = this.creature.y + 'px';
+
+                    // Creature banking — smooth tilt toward movement direction
+                    const targetAngle = dx * 14;
+                    this._bankAngle += (targetAngle - this._bankAngle) * 0.12; // critically damped lerp
+                    const size = parseFloat(creatureEl.style.width) / 60 || 1;
+                    creatureEl.style.transform = `rotate(${this._bankAngle.toFixed(1)}deg) scale(${size.toFixed(2)})`;
+
+                    ParticleSystem.setCreaturePos(this.creature.x, this.creature.y);
+
+                    if (!this._moving) {
+                        creatureEl.classList.remove('creature--idle');
+                        this._moving = true;
+                    }
+                    this._idleTimer = 0;
+                } else {
+                    // Decay tilt back to 0 when stopped
+                    this._bankAngle *= 0.88;
+                    if (Math.abs(this._bankAngle) > 0.2) {
+                        const size = parseFloat(creatureEl.style.width) / 60 || 1;
+                        creatureEl.style.transform = `rotate(${this._bankAngle.toFixed(1)}deg) scale(${size.toFixed(2)})`;
+                    } else {
+                        this._bankAngle = 0;
+                        const size = parseFloat(creatureEl.style.width) / 60 || 1;
+                        creatureEl.style.transform = `scale(${size.toFixed(2)})`;
+                    }
+
+                    if (this._moving) {
+                        this._idleTimer++;
+                        if (this._idleTimer > 40) {
+                            creatureEl.classList.add('creature--idle');
+                            this._moving = false;
+                        }
+                    }
                 }
             }
         }
