@@ -15,19 +15,132 @@
  * 10. Microsoft Store / MSN
  * 11. Lagged
  * 12. Y8 Games
+ *
+ * 100% Native, zero external tool dependency (cross-platform pure Node.js ZIP)
  */
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const zlib = require('zlib');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DIST_DIR = path.join(ROOT_DIR, 'dist');
 const PLATFORMS_DIR = path.join(ROOT_DIR, 'platforms');
+const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
 
-// Ensure dist and platforms directories exist
-if (!fs.existsSync(DIST_DIR)) fs.mkdirSync(DIST_DIR, { recursive: true });
-if (!fs.existsSync(PLATFORMS_DIR)) fs.mkdirSync(PLATFORMS_DIR, { recursive: true });
+// Ensure dist, platforms, and public directories exist
+[DIST_DIR, PLATFORMS_DIR, PUBLIC_DIR].forEach(dir => {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+});
+
+/**
+ * Pure Node.js cross-platform ZIP implementation (no powershell, no zip CLI)
+ */
+function crc32(buf) {
+    if (typeof zlib.crc32 === 'function') return zlib.crc32(buf);
+    let c = 0 ^ (-1);
+    for (let i = 0; i < buf.length; i++) {
+        c = (c >>> 8) ^ ((c ^ buf[i]) & 0xFF);
+    }
+    return (c ^ (-1)) >>> 0;
+}
+
+function getAllFiles(dir, baseDir = dir) {
+    let results = [];
+    const list = fs.readdirSync(dir, { withFileTypes: true });
+    for (const dirent of list) {
+        const fullPath = path.join(dir, dirent.name);
+        if (dirent.isDirectory()) {
+            results = results.concat(getAllFiles(fullPath, baseDir));
+        } else {
+            const relPath = path.relative(baseDir, fullPath).replace(/\\/g, '/');
+            results.push({ name: relPath, content: fs.readFileSync(fullPath) });
+        }
+    }
+    return results;
+}
+
+function createZipFromDirectory(sourceDir, outZipPath) {
+    const files = getAllFiles(sourceDir);
+    const localHeaders = [];
+    const centralDirs = [];
+    let offset = 0;
+
+    for (const file of files) {
+        const nameBuf = Buffer.from(file.name, 'utf8');
+        const data = Buffer.isBuffer(file.content) ? file.content : Buffer.from(file.content);
+        const compressed = zlib.deflateRawSync(data);
+        const crc = crc32(data);
+
+        // Local file header (30 bytes + name)
+        const lh = Buffer.alloc(30 + nameBuf.length);
+        lh.writeUInt32LE(0x04034b50, 0); // signature
+        lh.writeUInt16LE(20, 4);          // version needed
+        lh.writeUInt16LE(0x0800, 6);      // flag (UTF-8)
+        lh.writeUInt16LE(8, 8);           // compression: deflate
+        lh.writeUInt16LE(0, 10);          // mod time
+        lh.writeUInt16LE(0, 12);          // mod date
+        lh.writeUInt32LE(crc, 14);        // crc32
+        lh.writeUInt32LE(compressed.length, 18); // compressed size
+        lh.writeUInt32LE(data.length, 22);       // uncompressed size
+        lh.writeUInt16LE(nameBuf.length, 26);    // name length
+        lh.writeUInt16LE(0, 28);                 // extra length
+        nameBuf.copy(lh, 30);
+
+        localHeaders.push(lh, compressed);
+
+        // Central directory entry (46 bytes + name)
+        const cd = Buffer.alloc(46 + nameBuf.length);
+        cd.writeUInt32LE(0x02014b50, 0); // signature
+        cd.writeUInt16LE(20, 4);          // version made by
+        cd.writeUInt16LE(20, 6);          // version needed
+        cd.writeUInt16LE(0x0800, 8);      // flag (UTF-8)
+        cd.writeUInt16LE(8, 10);          // compression
+        cd.writeUInt16LE(0, 12);          // mod time
+        cd.writeUInt16LE(0, 14);          // mod date
+        cd.writeUInt32LE(crc, 16);        // crc32
+        cd.writeUInt32LE(compressed.length, 20); // compressed size
+        cd.writeUInt32LE(data.length, 24);       // uncompressed size
+        cd.writeUInt16LE(nameBuf.length, 28);    // name length
+        cd.writeUInt16LE(0, 30);                 // extra length
+        cd.writeUInt16LE(0, 32);                 // comment length
+        cd.writeUInt16LE(0, 34);                 // disk start
+        cd.writeUInt16LE(0, 36);                 // internal attr
+        cd.writeUInt32LE(0, 38);                 // external attr
+        cd.writeUInt32LE(offset, 42);            // relative offset
+        nameBuf.copy(cd, 46);
+
+        centralDirs.push(cd);
+        offset += lh.length + compressed.length;
+    }
+
+    const cdBuf = Buffer.concat(centralDirs);
+    const eocd = Buffer.alloc(22);
+    eocd.writeUInt32LE(0x06054b50, 0); // signature
+    eocd.writeUInt16LE(0, 4);          // disk num
+    eocd.writeUInt16LE(0, 6);          // start disk
+    eocd.writeUInt16LE(files.length, 8);  // entries on disk
+    eocd.writeUInt16LE(files.length, 10); // total entries
+    eocd.writeUInt32LE(cdBuf.length, 12); // cd size
+    eocd.writeUInt32LE(offset, 16);       // cd offset
+    eocd.writeUInt16LE(0, 20);            // comment length
+
+    const finalZip = Buffer.concat([...localHeaders, cdBuf, eocd]);
+    fs.writeFileSync(outZipPath, finalZip);
+}
+
+function copyRecursive(src, dest) {
+    if (!fs.existsSync(src)) return;
+    const stat = fs.statSync(src);
+    if (stat.isDirectory()) {
+        if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+        for (const child of fs.readdirSync(src)) {
+            copyRecursive(path.join(src, child), path.join(dest, child));
+        }
+    } else {
+        fs.copyFileSync(src, dest);
+    }
+}
 
 const PLATFORMS = [
     {
@@ -132,8 +245,8 @@ const PLATFORMS = [
 // Read template files
 const rawIndexHtml = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
 const bridgeJs = fs.readFileSync(path.join(ROOT_DIR, 'src', 'platform-bridge.js'), 'utf8');
-const bannerSvg = fs.existsSync(path.join(ROOT_DIR, 'assets', 'banner.svg')) 
-    ? fs.readFileSync(path.join(ROOT_DIR, 'assets', 'banner.svg'), 'utf8') 
+const bannerSvg = fs.existsSync(path.join(ROOT_DIR, 'assets', 'banner.svg'))
+    ? fs.readFileSync(path.join(ROOT_DIR, 'assets', 'banner.svg'), 'utf8')
     : '';
 
 console.log('🚀 Packaging Reverse Evolution for all platforms (100% Native - Zero Playgama)...\n');
@@ -172,16 +285,29 @@ PLATFORMS.forEach(plat => {
         fs.writeFileSync(path.join(platformSpecificDir, 'banner.svg'), bannerSvg);
     }
 
-    // Zip package for upload to developer portal using native PowerShell Compress-Archive
+    // Zip package for upload to developer portal using pure Node.js (100% cross-platform)
     const zipPath = path.join(DIST_DIR, `${plat.id}-bundle.zip`);
     try {
         if (fs.existsSync(zipPath)) fs.unlinkSync(zipPath);
-        execSync(`powershell -Command "Compress-Archive -Path '${targetDir}/*' -DestinationPath '${zipPath}' -Force"`);
+        createZipFromDirectory(targetDir, zipPath);
         console.log(`✅ [${plat.name}] -> Built bundle & ZIP: dist/${plat.id}-bundle.zip`);
     } catch (err) {
+        console.error(`⚠️ [${plat.name}] ZIP generation note:`, err.message);
         console.log(`✅ [${plat.name}] -> Built bundle folder: dist/${plat.id}/`);
     }
 });
 
+// Sync and generate public/ directory for Vercel & static hosting
+console.log('\n📦 Synchronizing public/ output directory for Vercel deployment...');
+fs.copyFileSync(path.join(ROOT_DIR, 'index.html'), path.join(PUBLIC_DIR, 'index.html'));
+if (fs.existsSync(path.join(ROOT_DIR, 'reverse-evolution-game.html'))) {
+    fs.copyFileSync(path.join(ROOT_DIR, 'reverse-evolution-game.html'), path.join(PUBLIC_DIR, 'reverse-evolution-game.html'));
+}
+copyRecursive(path.join(ROOT_DIR, 'src'), path.join(PUBLIC_DIR, 'src'));
+copyRecursive(path.join(ROOT_DIR, 'assets'), path.join(PUBLIC_DIR, 'assets'));
+copyRecursive(path.join(ROOT_DIR, 'dist'), path.join(PUBLIC_DIR, 'dist'));
+copyRecursive(path.join(ROOT_DIR, 'platforms'), path.join(PUBLIC_DIR, 'platforms'));
+console.log('✅ public/ directory synchronized successfully!');
+
 console.log('\n🎉 Multi-Platform build completed successfully!');
-console.log('📦 All platform bundles are ready in dist/ ready to upload directly to publisher consoles.');
+console.log('📦 All platform bundles and Vercel public/ directory are ready.');

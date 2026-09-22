@@ -1,0 +1,19 @@
+{
+  "name": "Reverse Evolution: Survival of the Weakest",
+  "short_name": "Reverse Evolution",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#12121f",
+  "theme_color": "#7c4dff",
+  "description": "An inverted survival roguelite where Darwinism is turned on its head. Devolve to conquer the cosmic strata.",
+  "icons": [
+    {
+      "src": "../../assets/banner.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games", "entertainment", "action"]
+}

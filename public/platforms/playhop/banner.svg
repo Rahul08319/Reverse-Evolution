@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0817" />
+      <stop offset="50%" stop-color="#161233" />
+      <stop offset="100%" stop-color="#0a0914" />
+    </linearGradient>
+    <linearGradient id="neonPurple" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#b388ff" />
+      <stop offset="50%" stop-color="#7c4dff" />
+      <stop offset="100%" stop-color="#00e5ff" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffd54f" />
+      <stop offset="100%" stop-color="#ff9100" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="subtleGlow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(124, 77, 255, 0.07)" stroke-width="1" />
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="380" fill="url(#bgGrad)" rx="16" />
+  <rect width="1200" height="380" fill="url(#grid)" rx="16" />
+
+  <!-- Ambient Glow Orbs -->
+  <circle cx="200" cy="80" r="140" fill="rgba(124, 77, 255, 0.18)" filter="url(#glow)" />
+  <circle cx="1020" cy="300" r="160" fill="rgba(0, 229, 255, 0.12)" filter="url(#glow)" />
+  <circle cx="600" cy="200" r="220" fill="rgba(231, 76, 60, 0.08)" filter="url(#glow)" />
+
+  <!-- Outer Border -->
+  <rect x="2" y="2" width="1196" height="376" rx="16" fill="none" stroke="rgba(124, 77, 255, 0.35)" stroke-width="2" />
+
+  <!-- Top Pill Tag -->
+  <g transform="translate(600, 58)">
+    <rect x="-190" y="-18" width="380" height="36" rx="18" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(124, 77, 255, 0.5)" stroke-width="1.5" />
+    <circle cx="-160" cy="0" r="5" fill="#2ecc71" filter="url(#subtleGlow)" />
+    <text x="-145" y="5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#d1c4e9" letter-spacing="2">
+      YOUTUBE PLAYABLES SDK V1 CERTIFIED
+    </text>
+  </g>
+
+  <!-- Main Title -->
+  <text x="600" y="165" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Impact, Roboto, sans-serif" font-size="74" font-weight="900" fill="url(#neonPurple)" letter-spacing="8" filter="url(#subtleGlow)">
+    REVERSE EVOLUTION
+  </text>
+
+  <!-- Subtitle Tagline -->
+  <text x="600" y="215" text-anchor="middle" font-family="'Courier New', monospace, sans-serif" font-size="20" font-weight="600" fill="#ffd54f" letter-spacing="6">
+    SURVIVAL OF THE WEAKEST
+  </text>
+
+  <!-- Lore Philosophy Quote -->
+  <text x="600" y="258" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-style="italic" fill="#a0aec0" letter-spacing="0.5">
+    "When strength invites predation, frailty is the ultimate evolution."
+  </text>
+
+  <!-- Creature Morph Chain -->
+  <g transform="translate(600, 318)">
+    <!-- Stage Background Pill -->
+    <rect x="-360" y="-24" width="720" height="48" rx="24" fill="rgba(0, 0, 0, 0.4)" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1" />
+
+    <!-- Chain Elements -->
+    <text x="-290" y="8" font-size="24" text-anchor="middle">🦎</text>
+    <text x="-240" y="6" font-family="'Courier New', monospace" font-size="14" fill="#7c4dff" text-anchor="middle">➔</text>
+
+    <text x="-170" y="8" font-size="24" text-anchor="middle">🐁</text>
+    <text x="-120" y="6" font-family="'Courier New', monospace" font-size="14" fill="#7c4dff" text-anchor="middle">➔</text>
+
+    <text x="-50" y="8" font-size="24" text-anchor="middle">🐌</text>
+    <text x="0" y="6" font-family="'Courier New', monospace" font-size="14" fill="#7c4dff" text-anchor="middle">➔</text>
+
+    <text x="70" y="8" font-size="24" text-anchor="middle">🦔</text>
+    <text x="120" y="6" font-family="'Courier New', monospace" font-size="14" fill="#7c4dff" text-anchor="middle">➔</text>
+
+    <text x="190" y="8" font-size="24" text-anchor="middle">🐛</text>
+
+    <text x="280" y="6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#2ecc71" letter-spacing="1">
+      ADAPTIVE ATROPHY
+    </text>
+  </g>
+</svg>
